@@ -31,7 +31,7 @@ double avg(double x[], int m)
 	double s=0.00;
 	int i, z;
   
-	if (m==0) return NaN;
+	if (0==m) return NaN;
 
 	for(i=0, z=0; i<m; i++)
 	{
@@ -40,7 +40,7 @@ double avg(double x[], int m)
 			s += x[i];
 		}
 	}
-	if (z==0) return NaN;
+	if (0==z) return NaN;
 	return s/z;
 }
 
@@ -58,35 +58,29 @@ void kz(double *data_vector, long *n_arg, long *m_arg, long *k_arg)
 	m = (2 * *m_arg) + 1; n = *n_arg; iterations = *k_arg;
 
 	x = malloc(m*sizeof(double));
-	if (x == NULL) error("malloc failed: errno\n", errno);
+	if (NULL == x) {error("malloc failed: errno\n", errno);}
 	y = malloc( n*sizeof(double) );
-	if (y == NULL) error("malloc failed: errno\n", errno);
-	for(i=0; i<n; i++) y[i] = data_vector[i];
+	if (NULL == y) {error("malloc failed: errno\n", errno);}
+	for(i=0; i<n; i++) {y[i] = data_vector[i];}
 
 	p = (m-1)/2;
 
 	for(k=0; k<iterations; k++) 
 	{
 		memset(x, '\0', m*sizeof(double));
-		for (i=0; i<p; i++)
-			x[i] = NaN;
-		for(i=p; i<m; i++)
-			x[i] = y[i-p];
-
+		for (i=0; i<p; i++) {x[i] = NaN;}
+		for(i=p; i<m; i++) {x[i] = y[i-p];}
 		for(i=0; i<n; i++)
 		{
 			y[i] = avg(x, m);
 
 			/* setup x for next iteration */
-			for(j=0; j<m-1; j++)
-				x[j] = x[j+1];
-			if (i+p+1<n)
-				x[m-1] = y[i+p+1];
-			else
-				x[m-1] = NaN;
+			for(j=0; j<m-1; j++) {x[j] = x[j+1];}
+			if (i+p+1<n) {x[m-1] = y[i+p+1];}
+			else {x[m-1] = NaN;}
 		}
 	}
-	for(i=0; i<n; i++) data_vector[i] = y[i];
+	for(i=0; i<n; i++) {data_vector[i] = y[i];}
 		
 	/* clean up */
 	free(x);

@@ -36,7 +36,7 @@ static double maximum(double *v, int length)
 	int i;
 	m = v[0];
 
-	for(i=0; i<length; i++) m = MAX(v[i], m);
+	for(i=0; i<length; i++) {m = MAX(v[i], m);}
 
 	return m;
 }
@@ -64,21 +64,21 @@ void kza(double *v, long *n_arg, long *q_arg, long *k_arg)
 
 	n = *n_arg;	q = *q_arg; k = *k_arg;
 	y = malloc( n*sizeof(double) );
-	if (y == NULL) error("malloc failed: errno\n", errno);
+	if (y == NULL) {error("malloc failed: errno\n", errno);}
 	memcpy(y, v, n*sizeof(double));
 	kz(y, n_arg, q_arg, k_arg);
 
 	/* calculate d = |Z(t+q) - Z(t-q)| */
 	d = malloc( n*sizeof(double) );
-	if (d == NULL) error("malloc failed: errno\n", errno);
+	if (d == NULL) {error("malloc failed: errno\n", errno);}
 	for (i=0; i<q; i++) d[i] = fabs(y[i+q] - y[0]);
 	for (i=q; i<n-q; i++) {d[i] = fabs(y[i+q] - y[i-q]);}
 	for (i=n-q; i<n; i++) {d[i] = fabs(y[n-1] - y[i]);}
 
 	/* d'(t) = d(t+1)-d(t) */
 	dprime = malloc( n*sizeof(double) );
-	if (dprime == NULL) error("malloc failed: errno\n", errno);
-	for(i=0; i<n-1; i++) dprime[i] = d[i+1]-d[i];
+	if (dprime == NULL) {error("malloc failed: errno\n", errno);}
+	for(i=0; i<n-1; i++) {dprime[i] = d[i+1]-d[i];}
 	dprime[n-1] = 0;
 
     m = maximum(d, n);
@@ -100,9 +100,7 @@ void kza(double *v, long *n_arg, long *q_arg, long *k_arg)
 		    for (j=t-qt; j<=t+qh; j++) { y[t] += v[j]; }
 		    y[t] /= (qh+qt+1);
 	    }
-	    for (t=n-q; t<n; t++) {
-	        y[t] = NaN;
-        }
+	    for (t=n-q; t<n; t++) {y[t] = NaN;}
         
 	    memcpy(v,y, n*sizeof(double));
 	}

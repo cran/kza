@@ -24,7 +24,7 @@ z <- z[[1]]
 # determine adaptive filter
 d <- rep(0,3000)
 f <- kzf(v,100,d)
-f <- f[[5]]
+f <- f[[4]]
 
 # plot of sample variance
 s <- kzsv(z,100,f)

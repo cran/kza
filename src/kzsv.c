@@ -36,7 +36,7 @@ static double maximum(double *v, int length)
 	int i;
 	m = v[0];
 
-	for(i=0; i<length; i++) m = MAX(v[i], m);
+	for(i=0; i<length; i++) {m = MAX(v[i], m);}
 
 	return m;
 }
@@ -70,19 +70,17 @@ void kzsv(double *y, long *n_arg, long *q_arg, double *d)
 	qt = qh = q;
 
 	v = calloc(sizeof(double),n);
-	if (v == NULL) error("malloc failed: errno\n", errno);
+	if (NULL == v) {error("malloc failed: errno\n", errno);}
 
 	/* filter */
 	dprime = malloc( n*sizeof(double) );
-	if (dprime == NULL) error("malloc failed: errno\n", errno);
-	for(i=0; i<n-1; i++) dprime[i] = d[i+1]-d[i];
+	if (NULL == dprime) {error("malloc failed: errno\n", errno);}
+	for(i=0; i<n-1; i++) {dprime[i] = d[i+1]-d[i];}
 	dprime[n-1] = 0;
 	
    	dmax = maximum(d, n);
 
-    for (t=0; t<q; t++) {
-        v[t] = NaN;
-    }
+    for (t=0; t<q; t++) {v[t] = NaN;}
 	for (t=q; t<n-q; t++) {
 	    /* set head and tail size of filter */
     	if (dprime[t] < 0) {
@@ -102,13 +100,11 @@ void kzsv(double *y, long *n_arg, long *q_arg, double *d)
                 cnt++;
             }
 		}
-		if (cnt>0) v[t] /= cnt;
+		if (cnt>0) {v[t] /= cnt;}
 	}
 
-	for (t=n-q; t<n; t++) {
-	    v[t] = NaN;
-	}
-	 memcpy(y, v, n*sizeof(double));
+	for (t=n-q; t<n; t++) {v[t] = NaN;}
+	memcpy(y, v, n*sizeof(double));
 
 	free(v);
 	free(dprime);
