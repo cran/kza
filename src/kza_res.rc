@@ -12,8 +12,8 @@ BEGIN
     BEGIN
         BLOCK "040904E4"
         BEGIN
-            VALUE "FileDescription", "DLL for R package `the_name_of_the_package'\0"
-            VALUE "FileVersion", "1.0\0"
+            VALUE "FileDescription", "DLL for R package `kza'\0"
+            VALUE "FileVersion", "0.8\0"
             VALUE "Compiled under R Version", R_MAJOR "." R_MINOR " (" R_YEAR "-" R_MONTH "-" R_DAY ")\0"
             VALUE "Project info", "http://www.r-project.org\0"
         END

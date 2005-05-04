@@ -1,6 +1,6 @@
 /*
     kz.h
-    Copyright (C) 2003  Brian D. Close
+    Copyright (C) 2005  Brian D. Close
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,21 +18,19 @@
 
 */
 
- void kz (double *, long *, long *, long *);
- void kza(double *, long *, long *, long *);
- void kzsv(double *, long *, long *, double*);
- void kzf(double *, long *, long *, double *, long *);
- double avg(double x[], int m);
+#include <Rdefines.h>
+
+ SEXP kz1d(SEXP, SEXP, SEXP);
+ SEXP kz2d(SEXP, SEXP, SEXP);
+ void kza1d_test(double *, long *, long *, long *, long *);
+ SEXP kza1d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+ SEXP kza2d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+ void differenced(double *, double *, double *, long, int);
+ void R_differenced(SEXP, SEXP, SEXP, int);
+ double R_maximum(SEXP);
+ SEXP R_kzsv(SEXP, SEXP, SEXP, SEXP, SEXP);
 
  
-static unsigned char nan_small_endian_bytes[8] = \
-    {0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-
-static unsigned char nan_big_endian_bytes[8] = \
-    {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f};
-
-#if SMALL_ENDIAN 
-#define NaN *((double*)nan_small_endian_bytes)
-#else
-#define NaN *((double*)nan_big_endian_bytes)
+#if !defined(MAX)
+#define	MAX(A, B)	((A) > (B) ? (A) : (B))
 #endif

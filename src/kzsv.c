@@ -1,7 +1,7 @@
 /*
     kzsv.c
     kz sample variance
-    Copyright (C) 2003  Brian D. Close
+    Copyright (C) 2005  Brian D. Close
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,27 +19,8 @@
 
 */
  
-#include <stdlib.h>
-#include <memory.h>
-#include <errno.h>
-#include <math.h>
 #include <R.h>
 #include "kz.h"
-
-#if !defined(MAX)
-#define	MAX(A, B)	((A) > (B) ? (A) : (B))
-#endif
-
-static double maximum(double *v, int length) 
-{
-	double m;
-	int i;
-	m = v[0];
-
-	for(i=0; i<length; i++) {m = MAX(v[i], m);}
-
-	return m;
-}
 
 /* adaptive curvature function */
 static double adaptive(double d, double m)
@@ -47,65 +28,67 @@ static double adaptive(double d, double m)
 	return( 1 - (d/m) );
 }
 
-/*  sum((y[i] - mean(y))^2)
- * y is filtered data from kza
- * n_arg is size of y
- * q is half window size
- * d is difference values
- * sigma^2 = sum((y[i] - mean(y))^2)/(qh + qt + 1)
- */
-void kzsv(double *y, long *n_arg, long *q_arg, double *d)
+SEXP R_kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length, SEXP tolerance)
 {
-	double *v;
-	long n, q;
-	double m;
-	long t;
-	int i, cnt;
-	long qh,qt;
-	double *dprime;
-	double dmax;
+    int i, t;
+    int q;
+    int qh, qt;
+    int min_window_length;
+    long n;
+    double m;
+    SEXP d, dprime;
+    SEXP sigma=R_NilValue;
+	double var, sum, avg;
+	double temp;
+	int size;
+    double eps;
+    
+    eps = REAL(tolerance)[0];
+	q = INTEGER_VALUE(window);
+	min_window_length = INTEGER_VALUE(minimum_window_length);
+    n = LENGTH(kza_data);
+    
+	PROTECT(d = allocVector(REALSXP, n));
+	PROTECT(dprime = allocVector(REALSXP, n));
+    R_differenced(kz_data, d, dprime, q);
 
-	n = *n_arg;
-	q = *q_arg;
-	qt = qh = q;
+    m = R_maximum(d);
 
-	v = calloc(sizeof(double),n);
-	if (NULL == v) {error("malloc failed: errno\n", errno);}
-
-	/* filter */
-	dprime = malloc( n*sizeof(double) );
-	if (NULL == dprime) {error("malloc failed: errno\n", errno);}
-	for(i=0; i<n-1; i++) {dprime[i] = d[i+1]-d[i];}
-	dprime[n-1] = 0;
-	
-   	dmax = maximum(d, n);
-
-    for (t=0; t<q; t++) {v[t] = NaN;}
-	for (t=q; t<n-q; t++) {
-	    /* set head and tail size of filter */
-    	if (dprime[t] < 0) {
+    PROTECT(sigma = allocVector(REALSXP, n));
+   	for (t=0; t<n; t++) {
+	    if (fabs(REAL(dprime)[t]) < eps) { /* dprime[t] = 0 */
+		    qh = (int) floor(q*adaptive(REAL(d)[t], m));
+		    qt = (int) floor(q*adaptive(REAL(d)[t], m));
+	    } else if (REAL(dprime)[t] < 0) {
 	    	qh = q;
-   		    qt = (int) MAX(floor(q*adaptive(d[t], dmax)+0.5), 1);
-    	} else if (dprime[t] > 0) {
-	    	qh = (int) MAX(floor(q*adaptive(d[t], dmax)+0.5), 1);
+   		    qt = (int) floor(q*adaptive(REAL(d)[t], m));
+    	} else {
+	    	qh = (int) floor(q*adaptive(REAL(d)[t], m));
 		    qt = q;
-	    } else { /* dprime[t] = 0 */
-		    qh = (int) MAX(floor(q*adaptive(d[t], dmax)+0.5), 1);
-		    qt = (int) MAX(floor(q*adaptive(d[t], dmax)+0.5), 1);
-	    }
-	    m = avg(y+t-qt,qt+qh+1);
-		for(cnt=0, i=t-qt;i<=t+qh;i++) {
-    		if (!isnan(y[i])) {
-                v[t] += (y[i] - m)*(y[i] - m);
-                cnt++;
-            }
 		}
-		if (cnt>0) {v[t] /= cnt;}
+		qt = ((qt) < min_window_length) ? min_window_length : qt;
+		qh = ((qh) < min_window_length) ? min_window_length : qh;
+	
+        /* check bounds */
+       	qh = (qh > n-t-1) ? n-t-1 : qh; /* head past end of series */
+        qt = (qt > t) ? t : qt;
+        
+        /* variance */
+        sum=0.0;
+        for (i=t-qt; i<=t+qh; i++) {
+            sum += REAL(kza_data)[i];
+        }
+        size = qh+qt+1;
+        avg = sum/size;
+        
+        var=0.0;
+        for (i=t-qt; i<=t+qh; i++) {
+            temp = (REAL(kza_data)[i] - avg);
+            var += temp * temp;
+        }
+        var /= size - 1;
+        REAL(sigma)[t] = var;
 	}
-
-	for (t=n-q; t<n; t++) {v[t] = NaN;}
-	memcpy(y, v, n*sizeof(double));
-
-	free(v);
-	free(dprime);
+	UNPROTECT(3);
+	return(sigma);
 }

@@ -5,29 +5,24 @@
   Sample variance of a Kolmogorov-Zurbenko adaptive filter.
 }
 \usage{
-kzsv(v, q, f)
+kzsv(x, q, k=3, m=0, tol=1.0e-5)
 }
 \arguments{
-  \item{v}{A vector of the resultant time series from kza function.}
+  \item{x}{A vector of the resultant time series from kza function.}
   \item{q}{The half length of the window size for the filter.}
-  \item{f}{adaptive filter derived from kzf function.}
+  \item{k}{The number of iterations to run kz and kza functions.}
+  \item{m}{Minimum size of filtering window.}
+  \item{tol}{The smallest value to accept as nonzero.}
 }
 \examples{
 x <- c(rep(0,1000),rep(0.5,1000),rep(0,1000))
-set.seed(1)
-
 v <- x + rnorm(n = 3000, sd = 1.0)    # normally-distributed random variates
+z <- kza(v,200,m=10)
+par(mfrow=c(3,1))
+plot(v,type="l")
+plot(z,type="l")
 
-z <- kza(v,100,3)
-z <- z[[1]]
-
-# determine adaptive filter
-d <- rep(0,3000)
-f <- kzf(v,100,d)
-f <- f[[4]]
-
-# plot of sample variance
-s <- kzsv(z,100,f)
-plot(s[[1]],type="l")
+s <- kzsv(z,200)
+plot(s/mean(s),type="l")
 }
 \keyword{ts}

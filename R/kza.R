@@ -1,39 +1,16 @@
+kz <- function(x,q,k = 3) {
+    if (length(dim(x)) > 2) stop("Too many dimensions.")
+    x <- .Call("kz", x, q, k, NAOK=TRUE, PACKAGE="kza")
+}
 
-kza <- function(v,q,k = 3)
- .C("kza",
- as.double(v),
- as.integer(length(v)),
- as.integer(q),
- as.integer(k), 
- NAOK=TRUE, 
- PACKAGE="kza")
+kza <- function(x,q,k=3,m=0,tol=1.0e-5) {
+    if (length(dim(x)) > 2) stop("Too many dimensions.")
+    z <- .Call("kz", x, q, k, NAOK=TRUE, PACKAGE="kza")
+    x <- .Call("kza", x, z, q, k, m, tol, NAOK=TRUE, PACKAGE="kza")
+}
 
-kz <- function(v,q,k = 3)
- .C("kz",
- as.double(v),
- as.integer(length(v)),
- as.integer(q),
- as.integer(k), 
- NAOK=TRUE,
- PACKAGE="kza")
+kzsv <- function(x,q,k=3,m=0,tol=1.0e-5) {
+    z <- .Call("kz", x, q, k, NAOK=TRUE, PACKAGE="kza")
+    k <- .Call("kzsv", x, z, q, k, m, tol, NAOK=TRUE, PACKAGE="kza")
+}
 
-
-kzsv <- function(v,q,f)
- .C("kzsv",
- as.double(v),
- as.integer(length(v)),
- as.integer(q),
- as.double(f), 
- NAOK=TRUE,
- PACKAGE="kza")
- 
- 
-kzf <- function(v,q,d,k = 3)
- .C("kzf",
- as.double(v),
- as.integer(length(v)),
- as.integer(q),
- as.double(d),
- as.integer(k),
- PACKAGE="kza")
- 
