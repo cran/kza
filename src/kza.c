@@ -184,7 +184,7 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
     	for(i=0; i<nr-1; i++) {
 	        REAL(dprimey)[i+j*nr] = REAL(dy)[i+1+nr*j]-REAL(dy)[i+nr*j];
 	    }
-	    REAL(dprimey)[nr-1+nr*j] = REAL(dprimex)[nr-2+nr*j];
+	    REAL(dprimey)[nr-1+nr*j] = REAL(dprimey)[nr-2+nr*j];
     }
     
     mx = R_maximum(dx);
@@ -244,68 +244,264 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
 	return ans;
 }
 
-/* x : matrix including class(its) */
+static double averaged(SEXP x, SEXP box_center, SEXP width)
+{
+	SEXP dim;
+	int ndim;
+	int count=0;
+	double s=0.00;
+    SEXP index, box;
+    int offset, offset_a;
+    int i,j;
+    
+    dim = GET_DIM(x);
+    ndim = LENGTH(dim);
+    PROTECT(index = allocVector(INTSXP, LENGTH(dim)));
+    PROTECT(box = allocMatrix(INTSXP, LENGTH(dim), 2));
+    
+    if (isArray(x)) {
+        /* bounding box */
+        for(i=0; i<ndim; i++) {
+            /* box edges */
+            INTEGER(box)[i] = (INTEGER(box_center)[i] - INTEGER(width)[i]>0 ? INTEGER(box_center)[i] - INTEGER(width)[i] : 0);
+            INTEGER(box)[i+ndim] = (INTEGER(box_center)[i] + INTEGER(width)[i+ndim] <INTEGER(dim)[i] ? INTEGER(box_center)[i] + INTEGER(width)[i+ndim] : INTEGER(dim)[i]-1);
+            if (INTEGER(box)[i] == INTEGER(box)[i+ndim]) {
+                UNPROTECT(2);
+                return REAL(x)[INTEGER(box_center)[0]+INTEGER(dim)[0]*INTEGER(box_center)[1]+INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(box_center)[2]];
+            }
+        }
+        for(INTEGER(index)[0]=INTEGER(box)[0]; INTEGER(index)[0]<=INTEGER(box)[ndim]; INTEGER(index)[0]++) {
+            for(INTEGER(index)[1]=INTEGER(box)[1]; INTEGER(index)[1]<=INTEGER(box)[1+ndim]; INTEGER(index)[1]++) {
+              for(INTEGER(index)[2]=INTEGER(box)[2]; INTEGER(index)[2]<=INTEGER(box)[2+ndim]; INTEGER(index)[2]++) {
+/*
+        offset += INTEGER(index)[0];
+        offset += INTEGER(dim)[0]*INTEGER(index)[1];
+        offset += INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(index)[2];
+        offset += INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(dim)[2]*INTEGER(index)[3]; 
+*/
+                    /* find offset into array */
+                    for(i=0, offset=0; i<ndim; i++) {
+                        for(j=0, offset_a=1; j<i; j++) {
+                            offset_a *= INTEGER(dim)[j];
+                        }
+                        offset += offset_a * INTEGER(index)[i];
+                    }
+    	            if (R_FINITE(REAL(x)[offset])) {
+    	                count++;
+    		            s += REAL(x)[offset];
+	                }
+	            }
+            }
+        }
+	} else error("Input is not a vector or Matrix.");
+	
+	UNPROTECT(2);
+	if (count == 0) return R_NaN;
+	return s/count;
+}
+
+SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_length, SEXP tolerance)
+{
+    int q, min_window_length;
+	int i, j, k, l;
+	SEXP dx, dy, dprimex, dprimey;
+	double mx, my, mz;
+	SEXP dim, tmp, ans;
+	double epsilon;
+	SEXP dz, dprimez;
+    SEXP box;
+    int ndim;
+    int offset;
+    SEXP index;
+    SEXP filter;
+    int head, tail;
+    
+    epsilon = REAL(tolerance)[0];
+	q = INTEGER_VALUE(window);
+	min_window_length = INTEGER_VALUE(minimum_window_length);
+	
+    dim = GET_DIM(v);
+    ndim = LENGTH(dim);
+    if (ndim > 3) error("Too many dimensions, this has not been implemented yet.");
+    
+	PROTECT(tmp = allocArray(REALSXP, dim));
+    copyArray(tmp, v);
+
+	PROTECT(dx = allocArray(REALSXP, dim));
+	PROTECT(dy = allocArray(REALSXP, dim));
+	PROTECT(dz = allocArray(REALSXP, dim));
+
+	PROTECT(index = allocVector(INTSXP, LENGTH(dim)));
+    PROTECT(box = allocMatrix(INTSXP, LENGTH(dim), 2));
+	
+    /* calculate 
+	        dx = |Z(x+q,y,z) - Z(x-q,y,z)| , 
+	        dy = |Z(x,y+q,z) - Z(x,y-q),z| , 
+	        dz = |Z(x,y,z+q) - Z(x,y,z-q)|
+	*/
+	for(i=0; i<INTEGER(dim)[0]; i++) { 
+	    for(j=0;j<INTEGER(dim)[1];j++) {
+	        for(k=0;k<INTEGER(dim)[2];k++) {
+	            INTEGER(box)[0] = (i-q<0 ? 0 : i-q); /* row tail */
+	            INTEGER(box)[1] = (j-q<0 ? 0 : j-q); /* col tail */
+	            INTEGER(box)[2] = (k-q<0 ? 0 : k-q); /* z tail */
+	            INTEGER(box)[ndim] = (i+q>=INTEGER(dim)[0] ? INTEGER(dim)[0]-1 : i+q); /* row head */
+	            INTEGER(box)[ndim+1] = (j+q>=INTEGER(dim)[1] ? INTEGER(dim)[1]-1 : j+q); /* col head */
+	            INTEGER(box)[ndim+2] = (k+q>=INTEGER(dim)[2] ? INTEGER(dim)[2]-1 : k+q); /* z head */
+	            offset = i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k;
+	            /* head = offset+INTEGER(box)[ndim] 
+	            (i+INTEGER(box)[ndim])+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k; */
+	            REAL(dx)[offset] = fabs(REAL(kz)[INTEGER(box)[ndim]+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] - REAL(kz)[INTEGER(box)[0]+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]);
+	            REAL(dy)[offset] = fabs(REAL(kz)[i+INTEGER(dim)[0]*INTEGER(box)[ndim+1]+INTEGER(dim)[0]*INTEGER(dim)[1]*k] - REAL(kz)[i+INTEGER(dim)[0]*INTEGER(box)[1]+INTEGER(dim)[0]*INTEGER(dim)[1]*k]);
+	            REAL(dz)[offset] = fabs(REAL(kz)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(box)[ndim+2]] - REAL(kz)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(box)[2]]);
+	        }
+	    }
+	}
+
+	/* d'(t) = d(t+1)-d(t) */
+	PROTECT(dprimex = allocArray(REALSXP, dim));
+	PROTECT(dprimey = allocArray(REALSXP, dim));
+	PROTECT(dprimez = allocArray(REALSXP, dim));
+
+	/* d'(x) = d(x+1,y,z)-d(x,y,z) */
+	for(i=0; i<INTEGER(dim)[0]-1; i++) { /* ith row  (y)*/
+	    for(j=0;j<INTEGER(dim)[1];j++) { /* jth column (x) */
+    	    for(k=0;k<INTEGER(dim)[2];k++) {
+	            REAL(dprimex)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k] = REAL(dx)[(i+1)+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]-REAL(dx)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k];
+	        }
+        }
+	}
+    /* edge */
+    for(j=0;j<INTEGER(dim)[1];j++) {
+ 	    for(k=0;k<INTEGER(dim)[2];k++) {
+            REAL(dprimex)[(INTEGER(dim)[0]-1)+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k] = REAL(dprimex)[(INTEGER(dim)[0]-2)+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]; 
+        }
+    }
+    
+	/* d'(y) = d(x,y+1,z)-d(x,y,z) */
+   	for(j=0; j<INTEGER(dim)[1]-1; j++) {
+        for(i=0;i<INTEGER(dim)[0];i++) {
+    	    for(k=0;k<INTEGER(dim)[2];k++) {
+    	        REAL(dprimey)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k] = REAL(dy)[i+INTEGER(dim)[0]*(j+1)+INTEGER(dim)[0]*INTEGER(dim)[1]*k]-REAL(dy)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k];
+    	    }
+	    }
+    }
+    /* edge */
+    for(i=0;i<INTEGER(dim)[0];i++) {
+        for(k=0;k<INTEGER(dim)[2];k++) {
+            REAL(dprimey)[i+(INTEGER(dim)[0]*(INTEGER(dim)[1]-1))+INTEGER(dim)[0]*INTEGER(dim)[1]*k] = REAL(dprimey)[i+(INTEGER(dim)[0]*INTEGER(dim)[1]-2)+INTEGER(dim)[0]*INTEGER(dim)[1]*k];
+        }
+    }
+
+	/* d'(z) = d(x,y,z+1)-d(x,y,z) */
+    for(k=0;k<INTEGER(dim)[2]-1;k++) {
+        for(i=0;i<INTEGER(dim)[0];i++) {
+        	for(j=0; j<INTEGER(dim)[1]; j++) {
+    	        REAL(dprimez)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k] = REAL(dz)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*(k+1)]-REAL(dz)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k];
+    	    }
+	    }
+    }
+    /* edge */
+    for(i=0;i<INTEGER(dim)[0];i++) {
+      	for(j=0; j<INTEGER(dim)[1]; j++) {
+            REAL(dprimez)[i+INTEGER(dim)[0]*j+(INTEGER(dim)[0]*INTEGER(dim)[1]*(INTEGER(dim)[2]-1))] = REAL(dprimez)[i+INTEGER(dim)[0]*j+(INTEGER(dim)[0]*INTEGER(dim)[1]*(INTEGER(dim)[2]-2))];
+        }
+    }
+    mx = R_maximum(dx);
+    my = R_maximum(dy);
+    mz = R_maximum(dz);
+
+	PROTECT(ans = allocArray(REALSXP, dim));
+	PROTECT(filter = allocMatrix(INTSXP, ndim, 2));
+
+    for(l=0; l<INTEGER_VALUE(iterations); l++) {
+
+        /* determine bounding box for i,j,k coordinate */
+        /*  tail is INTEGER(filter)[0]
+            head is INTEGER(filter)[ndim] */
+    	for (i=0; i<INTEGER(dim)[0]; i++) {
+    	    for(j=0; j<INTEGER(dim)[1]; j++) {
+        	    for(k=0; k<INTEGER(dim)[2]; k++) { 
+        	        /* x */
+                    tail = 0;
+                    head = ndim;
+		            if (fabs(REAL(dprimex)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]) < epsilon) { /* dprimex[i,j] = 0 */
+			            INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx)); /* filter x head */
+			            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx)); /* filter x tail */
+		            } else if (REAL(dprimex)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] < 0) {
+		            	INTEGER(filter)[head++] = q;
+    		            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx));
+	    	        } else {
+		            	INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx));
+			            INTEGER(filter)[tail++] = q;
+			        }
+			        /* y */
+		            if (fabs(REAL(dprimey)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]) < epsilon) { /* dprimey[i,j,k] = 0 */
+		                INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
+			            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[1]*INTEGER(dim)[0]*k], my));
+		            } else if (REAL(dprimey)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] < 0) {
+		            	INTEGER(filter)[head++] = q;
+    		            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
+	    	        } else {
+		            	INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
+			            INTEGER(filter)[tail++] = q;
+			        }
+			        /* z */
+		            if (fabs(REAL(dprimez)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]) < epsilon) { /* dprimey[i,j,k] = 0 */
+		                INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
+			            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[1]*INTEGER(dim)[0]*k], mz));
+		            } else if (REAL(dprimez)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] < 0) {
+		            	INTEGER(filter)[head++] = q;
+    		            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
+	    	        } else {
+		            	INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
+			            INTEGER(filter)[tail++] = q;
+			        }
+                    
+                    for( head=ndim, tail=0; tail<ndim; head++, tail++) {
+                        INTEGER(filter)[tail] = ((INTEGER(filter)[tail]) < min_window_length) ? min_window_length : INTEGER(filter)[tail];
+                        INTEGER(filter)[head] = ((INTEGER(filter)[head]) < min_window_length) ? min_window_length : INTEGER(filter)[head];
+                    }
+	                
+                    INTEGER(index)[0]=i; INTEGER(index)[1]=j; INTEGER(index)[2]=k;
+                    /* EXP x, SEXP box_center, int width */
+                    REAL(ans)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k]=averaged(tmp, index, filter);
+                }
+   		    }
+	    }
+        copyArray(tmp, ans);
+	}
+
+    UNPROTECT(11);
+	return ans;
+}
+
 SEXP kza(SEXP x, SEXP kz, SEXP window, SEXP iterations, SEXP min_window, SEXP tol)
 {
-    R_len_t nx, ny;
     SEXP ans=R_NilValue, dim, class;
        
     dim = getAttrib(x, R_DimSymbol);
     class = getAttrib(x, R_ClassSymbol);
-       
-    nx = INTEGER(dim)[0]; ny = INTEGER(dim)[1];
-
-    if (isMatrix(x)) {
+    
+    if (LENGTH(x) != LENGTH(kz)) {
+        error("The size of the first two arguments do not match.");
+        return (ans);
+    }    
+    if (isArray(x) && LENGTH(dim) >= 3) {
+        if (LENGTH(dim) > 3) {
+            error("Too many dimensions -- not yet implemented, please contact the author for more info.");
+            return(ans);
+        }
+        PROTECT(ans = kza3d(x, kz, window, iterations, min_window, tol)); 
+        UNPROTECT(1); 
+    } else if (isMatrix(x)) {
         PROTECT(ans = kza2d(x, kz, window, iterations, min_window, tol)); 
         UNPROTECT(1); 
-    }
-    else if (isVector(x)) {
+    } else if (isVector(x)) {
         PROTECT(ans = kza1d(x, kz, window, iterations, min_window, tol)); 
         UNPROTECT(1); 
     }
-    else error("Input is not a Matrix.");
+    else error("Input is not a matrix or vector.");
     
-    /* its package 
-    if (strcmp("its", CHAR(STRING_ELT(class, 0)) == 0)  {
-    
-    }
-    */
-    
-    return(ans);
-}
-
-/* x : matrix including class(its) */
-SEXP kz(SEXP x, SEXP window, SEXP iterations)
-{
-    SEXP ans=R_NilValue, dim, class;
-       
-    dim = GET_DIM(x);
-       
-    if (isMatrix(x)) {
-        PROTECT(ans = kz2d(x, window, iterations)); 
-        UNPROTECT(1);
-    }
-    else if (isVector(x)) {
-        PROTECT(ans = kz1d(x, window, iterations)); 
-        UNPROTECT(1);
-    }
-    else error("Too many dimensions.");
-    
-    
-    /* its package 
-    class = getAttrib(x, R_ClassSymbol);
-    if (strcmp("its", CHAR(STRING_ELT(class, 0)) == 0)  {
-    
-    }
-    */
-    return(ans);
-}
-
-SEXP kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length, SEXP iterations, SEXP tolerance)
-{
-    SEXP ans=R_NilValue;
-    
-    PROTECT(ans = R_kzsv(kza_data, kz_data, window, minimum_window_length, tolerance));
-    UNPROTECT(1);
     return(ans);
 }

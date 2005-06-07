@@ -3,18 +3,21 @@
 \title{Kolmogorov-Zurbenko Adaptive}
 \author{Brian Close <bclose@nycap.rr.com> and Igor Zurbenko <IZurbenko@albany.edu>}
 \description{
-KZA will recover a 2-dimensional image buried in noise.
-The KZA Algorithm can recover break in a signal buried in noise.
+KZA will recover 2-dimensional or 3-dimensional image buried in noise.
+The KZA Algorithm can recover breaks in a signal buried in noise.
 }
 \details{
-The selection of parameters of KZA depend on the nature of the data.
+The selection of parameters of KZA depend on the nature of the data. 
+This function can take a long time to run, depending on the number of dimensions
+and the size of the dimensions.
 }
 \usage{
-kza(x, q, k = 3, m = 0, tol = 1.0e-5)
+kza(x, q, kz=NULL, k = 3, m = 0, tol = 1.0e-5)
 }
 \arguments{
-  \item{x}{A vector of the time series or a matrix of an image.}
+  \item{x}{A vector of the time series or a matrix (2d) or an array (3d) of an image.}
   \item{q}{The half length of the window size for the filter.}
+  \item{kz}{The filtered output from kz (moving average filter).}
   \item{k}{Number of iterations to run the filter.}
   \item{m}{Minimum size of filtering window.}
   \item{tol}{The smallest value to accept as nonzero.}
@@ -35,32 +38,49 @@ kza(x, q, k = 3, m = 0, tol = 1.0e-5)
     Theory and Methods, Vol.26, 12, 2999-3014, 1997.
 }
 \examples{
-# image detection
+#
+# image detection (2d)
+#
 a <- matrix(rep(0,100*100),nrow=100)
 a[35:70,35:70]<-1
 a <- a + matrix(rnorm(100*100,0,2),nrow=100)
-k <- kza(a,15)
+k <- kza(a,q=15)
+
+x <- seq(1,100)
+y <- x
+op <- par(bg = "white")
+
+#noise
+persp(x, y, a, zlab="z", zlim=c(-4,6), ticktype="detailed", theta = 30, phi = 30, col = "lightblue")
+
+#kza filtered
+persp(x, y, k, zlab="z", zlim=c(0,2), ticktype="detailed", theta = 30, phi = 30, col = "lightblue")
 
 par(mfrow=c(1,2))
 image(a,col=gray(seq(0,1,1/255)))
 image(k,col=gray(seq(0,1,1/255)))
 
-# another example
-a <- matrix(rep(0,100*100),nrow=100)
-a[35:70,35:70]<-1
-a <- a + matrix(rnorm(100*100,0,2),nrow=100)
-k <- kza(a,15)
+#
+#wedge example (3d)
+#
+m<-array(data=0, dim=c(50,50,50))
+for (i in 15:35) {
+    m[i:35,15:35,i] <- 1
+}
+m<-m+rnorm(n = 50*50*50, sd = 5)
+a<-kz(m,7,3)
+b<-kza(m,kz=a,q=7,k=3)
 
-par(mfrow=c(1,2))
-x <- seq(1,100)
-y <- x
-op <- par(bg = "white")
-persp(x, y, a, zlab="z", zlim=c(-4,6), ticktype="detailed", 
-    theta = 30, phi = 30, col = "lightblue")
-persp(x, y, k, zlab="z", zlim=c(0,2), ticktype="detailed", 
-    theta = 30, phi = 30, col = "lightblue")
+#movie of noisy 3d object
+for(i in 1:50) {
+    image(matrix(m[,,i],50,50),col=gray(seq(0,min(max(m[,,i]),1),1/255)))
+}
+#movie of kza filtered
+for(i in 1:50) {
+    image(matrix(b[,,i],50,50),col=gray(seq(0,min(max(b[,,i]),1),1/255)))
+}
 
-
+#
 # this is an example of detection of a break point in a time series
 # seasonal data
 yrs <- 20

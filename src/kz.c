@@ -22,7 +22,6 @@
 #include <Rdefines.h>
 #include "kz.h"
 
-
 static double mavg2d(SEXP v, int row, int col, int w)
 {
 	double s=0.00;
@@ -70,6 +69,58 @@ static double mavg1d(SEXP v, int col, int w)
 	} else error("Input is not a vector or Matrix.");
 	if (z == 0) return R_NaN;
 	return s/z;
+}
+
+static double averaged(SEXP x, SEXP box_center, int width)
+{
+	SEXP dim;
+	int ndim;
+	int count=0;
+	double s=0.00;
+    SEXP index, box;
+    int offset, offset_a;
+    int i,j;
+    
+    dim = GET_DIM(x);
+    ndim = LENGTH(dim);
+    PROTECT(index = allocVector(INTSXP, LENGTH(dim)));
+    PROTECT(box = allocMatrix(INTSXP, LENGTH(dim), 2));
+    
+    if (isArray(x)) {
+        /* bounding box */
+        for(i=0; i<ndim; i++) {
+            /* box edges */
+            INTEGER(box)[i] = (INTEGER(box_center)[i] - width>0 ? INTEGER(box_center)[i] - width : 0);
+            INTEGER(box)[i+ndim] = (INTEGER(box_center)[i] + width <INTEGER(dim)[i] ? INTEGER(box_center)[i] + width : INTEGER(dim)[i]-1);
+        }
+        for(INTEGER(index)[0]=INTEGER(box)[0]; INTEGER(index)[0]<=INTEGER(box)[ndim]; INTEGER(index)[0]++) {
+            for(INTEGER(index)[1]=INTEGER(box)[1]; INTEGER(index)[1]<=INTEGER(box)[1+ndim]; INTEGER(index)[1]++) {
+              for(INTEGER(index)[2]=INTEGER(box)[2]; INTEGER(index)[2]<=INTEGER(box)[2+ndim]; INTEGER(index)[2]++) {
+/*
+        offset += INTEGER(index)[0];
+        offset += INTEGER(dim)[0]*INTEGER(index)[1];
+        offset += INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(index)[2];
+        offset += INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(dim)[2]*INTEGER(index)[3]; 
+*/
+                    /* find offset into array */
+                    for(i=0, offset=0; i<ndim; i++) {
+                        for(j=0, offset_a=1; j<i; j++) {
+                            offset_a *= INTEGER(dim)[j];
+                        }
+                        offset += offset_a * INTEGER(index)[i];
+                    }
+    	            if (R_FINITE(REAL(x)[offset])) {
+    	                count++;
+    		            s += REAL(x)[offset];
+	                }
+	            }
+            }
+        }
+	} else error("Input is not a vector or Matrix.");
+	
+	UNPROTECT(2);
+	if (count == 0) return R_NaN;
+	return s/count;
 }
 
 SEXP kz1d(SEXP x, SEXP window, SEXP iterations)
@@ -130,4 +181,82 @@ SEXP kz2d(SEXP x, SEXP window, SEXP iterations)
 	}
 	UNPROTECT(2);
 	return ans;
+}
+
+void copyArray(SEXP destination, SEXP source)
+{
+    int i;
+    
+    for(i=0; i<LENGTH(source);i++) {
+        REAL(destination)[i] = REAL(source)[i];       
+    }
+}
+
+SEXP kz3d(SEXP x, SEXP window, SEXP iterations)
+{
+	int p;
+	int i, j, k, l;
+	int m;
+	SEXP ans, tmp, dim;
+	SEXP index;
+	int offset, offset_a;
+
+	m = (2 * INTEGER_VALUE(window)) + 1; 
+	p = (m-1)/2;
+	
+	dim = GET_DIM(x);
+	
+	PROTECT(index = allocVector(INTSXP, LENGTH(dim)));
+	PROTECT(ans = allocArray(REALSXP, dim));
+	PROTECT(tmp = allocArray(REALSXP, dim));
+	copyArray(ans, x);
+
+	for(l=0; l<INTEGER_VALUE(iterations); l++) {
+   	    copyArray(tmp, ans); 
+        for(INTEGER(index)[0]=0; INTEGER(index)[0]<INTEGER(dim)[0]; INTEGER(index)[0]++) {
+            for(INTEGER(index)[1]=0; INTEGER(index)[1]<INTEGER(dim)[1]; INTEGER(index)[1]++) {
+              for(INTEGER(index)[2]=0; INTEGER(index)[2]<INTEGER(dim)[2]; INTEGER(index)[2]++) {
+/*
+        offset += INTEGER(index)[0];
+        offset += INTEGER(dim)[0]*INTEGER(index)[1];
+        offset += INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(index)[2];
+        offset += INTEGER(dim)[0]*INTEGER(dim)[1]*INTEGER(dim)[2]*INTEGER(index)[3]; 
+*/
+                    /* find offset into array */
+                    for(i=0, offset=0; i<LENGTH(dim); i++) {
+                        for(j=0, offset_a=1; j<i; j++) {
+                            offset_a *= INTEGER(dim)[j];
+                        }
+                        offset += offset_a * INTEGER(index)[i];
+                    }
+                    REAL(ans)[offset] = averaged(tmp, index, p);
+                }
+            }
+        }
+	}
+	UNPROTECT(3);
+	return ans;
+}
+
+SEXP kz(SEXP x, SEXP window, SEXP iterations)
+{
+    SEXP ans=R_NilValue, dim;
+
+    dim = getAttrib(x, R_DimSymbol);
+    
+    if (isArray(x) && LENGTH(dim) >= 3) {
+        if (LENGTH(dim) > 3) {
+            error("Too many dimensions -- not yet implemented, please contact the author for more info.");
+            return(ans);
+        }
+        PROTECT(ans = kz3d(x, window, iterations)); 
+        UNPROTECT(1);
+    } else if (isMatrix(x)) {
+        PROTECT(ans = kz2d(x, window, iterations)); 
+        UNPROTECT(1);
+    } else if (isVector(x)) {
+        PROTECT(ans = kz1d(x, window, iterations)); 
+        UNPROTECT(1);
+    }
+    return(ans);
 }

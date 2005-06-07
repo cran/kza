@@ -28,6 +28,15 @@ static double adaptive(double d, double m)
 	return( 1 - (d/m) );
 }
 
+SEXP kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length, SEXP iterations, SEXP tolerance)
+{
+    SEXP ans=R_NilValue;
+    
+    PROTECT(ans = R_kzsv(kza_data, kz_data, window, minimum_window_length, tolerance));
+    UNPROTECT(1);
+    return(ans);
+}
+
 SEXP R_kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length, SEXP tolerance)
 {
     int i, t;
@@ -47,6 +56,10 @@ SEXP R_kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length
 	q = INTEGER_VALUE(window);
 	min_window_length = INTEGER_VALUE(minimum_window_length);
     n = LENGTH(kza_data);
+    
+    if (LENGTH(kza_data)==0) error("KZA not specified.");
+    if (LENGTH(kz_data)==0) error("KZ not specified.");
+    if (LENGTH(kza_data)!=LENGTH(kz_data)) error("KZA KZ data size mismatch.");
     
 	PROTECT(d = allocVector(REALSXP, n));
 	PROTECT(dprime = allocVector(REALSXP, n));
