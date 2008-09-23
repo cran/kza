@@ -195,7 +195,7 @@ void copyArray(SEXP destination, SEXP source)
 SEXP kz3d(SEXP x, SEXP window, SEXP iterations)
 {
 	int p;
-	int i, j, k, l;
+	int i, j, l;
 	int m;
 	SEXP ans, tmp, dim;
 	SEXP index;
@@ -260,3 +260,4 @@ SEXP kz(SEXP x, SEXP window, SEXP iterations)
     }
     return(ans);
 }
+

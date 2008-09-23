@@ -1,10 +1,9 @@
 \name{kza}
 \alias{kza}
 \title{Kolmogorov-Zurbenko Adaptive}
-\author{Brian Close <bclose@nycap.rr.com> and Igor Zurbenko <IZurbenko@albany.edu>}
+\author{Brian Close <brian.close@gmail.com> and Igor Zurbenko <IZurbenko@albany.edu>}
 \description{
-KZA will recover 2-dimensional or 3-dimensional image buried in noise.
-The KZA Algorithm can recover breaks in a signal buried in noise.
+KZA will recover 2-dimensional or 3-dimensional image or signal buried in noise.
 }
 \details{
 The selection of parameters of KZA depend on the nature of the data. 

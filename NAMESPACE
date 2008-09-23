@@ -1,0 +1,3 @@
+useDynLib(kza)
+export(kz, kza, kzsv, kzft, kztp, kztp_conj, smooth, transfer_function, kzp, ff_kzft)
+Suggests(polynom)

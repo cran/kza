@@ -20,18 +20,25 @@
 
 #include <Rdefines.h>
 
- SEXP kz1d(SEXP, SEXP, SEXP);
- SEXP kz2d(SEXP, SEXP, SEXP);
- void kza1d_test(double *, long *, long *, long *, long *);
- SEXP kza1d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
- SEXP kza2d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
- void differenced(double *, double *, double *, long, int);
- void R_differenced(SEXP, SEXP, SEXP, int);
- double R_maximum(SEXP);
- SEXP R_kzsv(SEXP, SEXP, SEXP, SEXP, SEXP);
- void copyArray(SEXP, SEXP);
-
+SEXP kza(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP kz(SEXP, SEXP, SEXP);
+SEXP kz1d(SEXP, SEXP, SEXP);
+SEXP kz2d(SEXP, SEXP, SEXP);
+void kza1d_test(double *, long *, long *, long *, long *);
+SEXP kza1d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP kza2d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+void differenced(double *, double *, double *, long, int);
+void R_differenced(SEXP, SEXP, SEXP, int);
+double R_maximum(SEXP);
+SEXP R_kzsv(SEXP, SEXP, SEXP, SEXP, SEXP);
+void copyArray(SEXP, SEXP);
  
-#if !defined(MAX)
-#define	MAX(A, B)	((A) > (B) ? (A) : (B))
+#ifndef MIN
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
+#ifndef MAX
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#endif
+#ifndef ABS
+#define ABS(x)  ((x<0)?(-x):(x))
 #endif
