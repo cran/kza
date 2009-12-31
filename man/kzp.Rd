@@ -12,13 +12,15 @@
 }
 
 \usage{
-kzp(z, m, k)
+kzp(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
 }
 
 \arguments{
-  \item{z}{The matrix output by KZFT}
-  \item{m}{The width of window}
+  \item{y}{The raw data.}
+  \item{m}{The width of filtering window}
   \item{k}{The number of iterations for the KZFT}
+  \item{f}{The frequency that KZFT is applied at.}
+  \item{double_frequency}{The return vector is half the width of the filtering window, setting this to true will give the second half.}
 }
 
 \references{
@@ -37,7 +39,8 @@ kzp(z, m, k)
 \seealso{
   \code{\link{kzft}},
   \code{\link{kztp}},
-  \code{\link{smooth}},
+  \code{\link{smooth_kzp}},
+  \code{\link{plot.kzp}},  
 }
 
 \examples{
@@ -45,16 +48,6 @@ kzp(z, m, k)
 #example 
 t<-1:5000
 y<-1.1*sin(2*pi*0.3*t)+7*sin(2*pi*0.4*t)+10*rnorm(length(t))
-m=1000
-z <- kzft(y, m, 1, dim=2)
-a<-log(kzp(z$Complex,m,1))
-spg.dz<-smooth(a,0.03, method="DZ")
-spg.nz<-smooth(a,0.03, method="NZ")
-
-omega<-seq(0,1,length=1000)[1:500]
-par(mfrow=c(2,2))
-plot(omega,a,main="Raw periodogram",type="l", xlab="Frequency", ylab="")
-plot(omega,spg.dz,main="Smoothed Periodogram DZ method",type="l", xlab="Frequency", ylab="")
-plot(omega,spg.nz,main="Smoothed Periodogram NZ method",type="l", xlab="Frequency", ylab="")
-
+a<-kzp(y,m=1000)
+plot.kzp(a,c=0.03)
 }

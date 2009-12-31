@@ -1,7 +1,7 @@
 \name{kzft}
 \alias{kzft}
-\alias{ff_kzft}
 \alias{transfer_function}
+\alias{frequency_kzft}
 \title{Kolmogorov-Zurbenko Fourier Transform}
 \description{
 Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
@@ -9,21 +9,22 @@ Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
 \details{
 Kolmogorov-Zurbenko Fourier Transform (KZFT) is the Fourier transform applied over every segment of length m iterated k times. If a frequency is not selected then the frequency with the largest amplitude is used.
 The approach taken here is to iterate fft to create a matrix of frequencies over time, another approach is to use matrices for the KZFT transform (see the KZFT package by Wei Yang in R).
+
+The frequency_kzft function returns the frequency with the largest variation.
 }
 \usage{
-kzft(x, m=100, k=1, f=NULL, dim=1)
-ff_kzft(xr, xi=NULL, m=100, k=1, f=NULL, dim=1)
+kzft(x, m, k = 1, f = NULL, dim = 2, t = NULL, trim=TRUE) 
+frequency_kzft(x, m, t = NULL)
 transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
 }
 \arguments{
   \item{x}{The raw time series}
-  \item{m}{The length of the window size for a regular Fourier transform}
+  \item{m}{The window size for transform}
   \item{k}{The number of iterations for applying the KZFT}
   \item{f}{The frequency that KZFT is applied at.}
   \item{dim}{A value of 1 will return a vector of the given frequency and a value of 2 will return a matrix (spectra).}
-  
-  \item{xr}{The Real component of a complex time series}
-  \item{xi}{The Imaginary component of a complex time series}
+  \item{t}{An indexing set}
+  \item{trim}{Should function remove n-m data from result.(recommended)}
   
   \item{lamda}{The frequencies used for the calculating the transfer function}
   \item{omega}{The frequency that KZFT is applied at.}
@@ -53,24 +54,23 @@ transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
 
 
 # function to calculate polnomial coefficients for kzft
-require(polynom)
-coeff <- function(m, k)
-{
-    poly<-polynomial(rep(1,m))
-    polyk<-poly^k
-    coef<-as.vector(polyk)
-    coef<-coef/m^k
-    M=(m-1)*k+1
-    return(coef[1:M])
-}
+#require(polynom)
+#coeff <- function(m, k)
+#{
+#    poly<-polynomial(rep(1,m))
+#    polyk<-poly^k
+#    coef<-as.vector(polyk)
+#    coef<-coef/m^k
+#    M=(m-1)*k+1
+#    return(coef[1:M])
+#}
 
-
-a<-coeff(201,5);
-t<-seq(1:1001)-501;
-z<-cos(2*pi*0.025*t);
-plot(z*a,type="l",xlab="Time", ylab="Coefficient", main="Coefficients of the kzft");
-lines(a);
-lines(-1*a);
+#a<-coeff(201,5);
+#t<-seq(1:1001)-501;
+#z<-cos(2*pi*0.025*t);
+#plot(z*a,type="l",xlab="Time", ylab="Coefficient", main="Coefficients of the kzft");
+#lines(a);
+#lines(-1*a);
 
 # example taken from Wei Yang's KZFT package
 # transfer function of the kzft(201,5) at frequency 0.025
@@ -88,40 +88,14 @@ t<-1:1000
 f<-10/1000
 x<-cos(2*pi*f*t) + rnorm(length(t),0,3)
 
-system.time(z1<-kzft(x,200,1)$Complex)
-system.time(z2<-kzft(x,200,2)$Complex)
-system.time(z3<-kzft(x,200,3)$Complex)
+system.time(z1<-kzft(x,m=200,k=1, dim=1))
+system.time(z2<-kzft(x,m=200,k=2, dim=1))
+system.time(z3<-kzft(x,m=200,k=3, dim=1))
 
 par(mfrow=c(2,2))
 plot(x,type="l",main="Original time series",xlab="t", ylab="y")
-plot(2*Re(z1)[1:400],type="l",main="kzft(200,1)",xlab="t", ylab="y")
-plot(2*Re(z2)[1:400],type="l",main="kzft(200,2)",xlab="t", ylab="y")
-plot(2*Re(z3)[1:400],type="l",main="kzft(200,3)",xlab="t", ylab="y")
-
-#
-# example ff
-# This example uses the ff package for use with large datasets
-#
-require(ff)
-t<-1:1000
-f<-10/1000
-x<-cos(2*pi*(10/1000)*t)+rnorm(1000,0,3)
-
-#
-# ff does not yet handle complex datasets so we need to seperate the complex components
-# xr is the real component and xi is assigned the imaginary
-# we will simply convert to "ff" format; to read in a dataset from a file, please read the ff documentation.
-#
-xr<-ff(x)
-xi<-ff(vmode="double",length=length(x))
-
-z1<-ff_kzft(xr,xi,200,1)$Re
-z2<-ff_kzft(xr,xi,200,2)$Re
-z3<-ff_kzft(xr,xi,200,3)$Re
-
-par(mfrow=c(2,2))
-plot(x,type="l",main="Original time series",xlab="t", ylab="y")
-plot(2*z1[1:400],type="l",main="ff_kzft(200,1)",xlab="t", ylab="y")
-plot(2*z2[1:400],type="l",main="ff_kzft(200,2)",xlab="t", ylab="y")
-plot(2*z3[1:400],type="l",main="ff_kzft(200,3)",xlab="t", ylab="y")
+plot(2*Re(z1),type="l",main="kzft(200,1)",xlab="t", ylab="y")
+plot(2*Re(z2),type="l",main="kzft(200,2)",xlab="t", ylab="y")
+plot(2*Re(z3),type="l",main="kzft(200,3)",xlab="t", ylab="y")
+par(mfrow=c(1,1))
 }

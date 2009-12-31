@@ -11,8 +11,8 @@
 kz(x, q, k = 3)
 }
 \arguments{
-  \item{x}{A vector of the time series}
-  \item{q}{The half length of the window size for the filter}
+  \item{x}{A vector of the time series.}
+  \item{q}{Window size for the filter.}
   \item{k}{Number of iterations.}
 }
 \references{
@@ -23,7 +23,7 @@ kz(x, q, k = 3)
 yrs <- 20
 t <- seq(0,yrs,length=yrs*365)
 y <- sin(2*pi*t) + sin(3*pi*t)
-k.kz <- kz(y,365/4)
+k.kz <- kz(y,365/2)
 
 par(mfrow=c(3,1))
 plot(y,type="l",main="y = sin(2*pi*t)+sin(3*pi*t)")

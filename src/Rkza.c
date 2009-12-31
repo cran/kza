@@ -6,6 +6,7 @@
 #include <Rmath.h>
 #include "kzft.h"
 #include "kz.h"
+#include "config.h"
 
 #include <R_ext/Rdynload.h>
 
@@ -17,6 +18,13 @@
     {"kzp_smooth", (DL_FUNC) &R_smooth_kzp, 5},
     {"smooth_kzp", (DL_FUNC) &R_smooth_kzp, 5},
     {"smooth_kztp", (DL_FUNC) &R_smooth_kztp, 5},
+    {"kzs", (DL_FUNC) &kzs, 8},
+#ifdef HAVE_FFTW
+	{"kzftwz", (DL_FUNC) &kzftwz, 4},
+	{"kzp", (DL_FUNC) &R_kzp_fftw, 3},
+	{"kzp_1k", (DL_FUNC) &R_kzp_fftw_1k, 3},
+#endif
+	{"fftw", (DL_FUNC) &check_fftw, 0},
    {NULL, NULL, 0}
 };
 

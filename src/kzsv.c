@@ -68,19 +68,19 @@ SEXP R_kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length
     m = R_maximum(d);
 
     PROTECT(sigma = allocVector(REALSXP, n));
-   	for (t=0; t<n; t++) {
-	    if (fabs(REAL(dprime)[t]) < eps) { /* dprime[t] = 0 */
-		    qh = (int) floor(q*adaptive(REAL(d)[t], m));
-		    qt = (int) floor(q*adaptive(REAL(d)[t], m));
-	    } else if (REAL(dprime)[t] < 0) {
-	    	qh = q;
-   		    qt = (int) floor(q*adaptive(REAL(d)[t], m));
+    for (t=0; t<n; t++) {
+	if (fabs(REAL(dprime)[t]) < eps) { /* dprime[t] = 0 */
+	    qh = (int) floor(q*adaptive(REAL(d)[t], m));
+	    qt = (int) floor(q*adaptive(REAL(d)[t], m));
+	} else if (REAL(dprime)[t] < 0) {
+	    qh = q;
+   	    qt = (int) floor(q*adaptive(REAL(d)[t], m));
     	} else {
-	    	qh = (int) floor(q*adaptive(REAL(d)[t], m));
-		    qt = q;
-		}
-		qt = ((qt) < min_window_length) ? min_window_length : qt;
-		qh = ((qh) < min_window_length) ? min_window_length : qh;
+	    qh = (int) floor(q*adaptive(REAL(d)[t], m));
+	    qt = q;
+	}
+	qt = ((qt) < min_window_length) ? min_window_length : qt;
+	qh = ((qh) < min_window_length) ? min_window_length : qh;
 	
         /* check bounds */
        	qh = (qh > n-t-1) ? n-t-1 : qh; /* head past end of series */
@@ -101,7 +101,8 @@ SEXP R_kzsv(SEXP kza_data, SEXP kz_data, SEXP window, SEXP minimum_window_length
         }
         var /= size - 1;
         REAL(sigma)[t] = var;
-	}
-	UNPROTECT(3);
-	return(sigma);
+    }
+    UNPROTECT(3);
+    return(sigma);
 }
+

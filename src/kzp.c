@@ -71,7 +71,6 @@ static int nonlinear(double *pg, double *spg, int N, int iK, double c)
         for (int j=1; j<iK; j++) { //jth col
             int max=MAX(1,(i-j)); 
             int min=MIN(N-1,(i+j+1));
-            double a=abssum(pg, max, min);
             m += (abssum(pg, max, min) <= total) ? 1 : 0;
         }
         int max = MAX(0,(i-m));
@@ -84,8 +83,6 @@ static int nonlinear(double *pg, double *spg, int N, int iK, double c)
 
 SEXP R_smooth_kzp(SEXP r_pg, SEXP R_c, SEXP K, SEXP r_spg, SEXP method)
 {
-    double cc, total;
-    int d;
     double c=REAL(R_c)[0];
     int N=LENGTH(r_pg);
     int iK=INTEGER_VALUE(K);
@@ -129,7 +126,5 @@ SEXP R_kzp_energy(SEXP z, SEXP M)
 	UNPROTECT(1);
 	return(r_ans);
 }
-
-
 
 

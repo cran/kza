@@ -11,18 +11,6 @@
 
 #define HAVE_FORTRAN_DOUBLE_COMPLEX 1
 
-void cmatprod(Rcomplex *, int, int,
-                Rcomplex *, int, int, Rcomplex *);
-
-void F77_NAME (sgemm) (char *, char *, int *, int *, int *, float *, float *,
-		        int *, float *, int *, float *, float *, int *);
-
-void F77_NAME(zgemm)(const char *transa, const char *transb, const int *m,
-		        const int *n, const int *k, const Rcomplex *alpha,
-		        const Rcomplex *a, const int *lda,
-		        const Rcomplex *b, const int *ldb,
-		        const Rcomplex *beta, Rcomplex *c, const int *ldc);
-
 SEXP R_kzft(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP R_kztp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP R_kztp_test(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -43,6 +31,15 @@ SEXP R_kzp_energy(SEXP, SEXP);
 
 SEXP bkzp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
+SEXP bc_kzft(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP kzftwz(SEXP, SEXP, SEXP, SEXP);
+SEXP big_kzftw(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP R_kzp_fftw(SEXP, SEXP, SEXP);
+SEXP R_kzp_fftw_1k(SEXP, SEXP, SEXP);
+SEXP R_kzftwzf_1d(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP check_fftw(void);
+
+double coeff(int, int, int);
 
 /*
  k is the power

@@ -1,5 +1,5 @@
-\name{smooth}
-\alias{smooth}
+\name{smooth_kzp}
+\alias{smooth_kzp}
 
 \title{Kolmogorov-Zurbenko Third-Order Periodogram Smoothing Method}
 
@@ -12,14 +12,14 @@
 }
 
 \usage{
-smooth(p, c=0.01, w=length(p), method="DZ")
+smooth_kzp(x, c=0.01, w=length(x), method="DZ")
 }
 
 \arguments{
-  \item{p}{The third-order periodogram output from the kztp function.}
+  \item{x}{The third-order periodogram output from the kztp function.}
   \item{c}{The percentage of variation to be used for smoothing.}
-  \item{w}{The half-width of the smoothing window to be used.}
-  \item{method}{The smoothing method to apply: currently only DZ is available when p is a matrix, so this can safely be ignored.}
+  \item{w}{The width of the smoothing window.}
+  \item{method}{The smoothing method to apply.}
 }
 
 \references{
@@ -27,6 +27,10 @@ smooth(p, c=0.01, w=length(p), method="DZ")
   
   I. G. Zurbenko, P. S. Porter, Construction of high-resolution wavelets, Signal Processing 65: 315-327, 1998.
   
+  A. G. DiRienzo, I. G. Zurbenko, Semi-adaptive nonparametric spectral estimation, Journal of Computational and Graphical Statistics 8(1): 41-59, 1998.
+  
+  R. Neagu, I. G. Zurbenko, Algorithm for adaptively smoothing the log-periodgram, Journal of the Franklin Institute 340: 103-123, 2003.
+
   W. Yang, I. G. Zurbenko, A semi-adaptive smoothing algorithm in bispectrum estimation, Proceedings of the American Statistical Association, Seattle, 2006.
   
   Wei Yang and Igor Zurbenko, kzft: Kolmogorov-Zurbenko Fourier Transform and Applications, R-Project 2007.
@@ -43,19 +47,10 @@ smooth(p, c=0.01, w=length(p), method="DZ")
 #
 # example
 #
-t<-1:10000
-y<-sin(2*pi*0.1*t)+3*sin(2*pi*0.2*t) + rnorm(length(t),0,2)
-
-a<-kztp(y,50,1)
-z<-log(Mod(a))
-s<-smooth(z,0.01,20)
-
-omega<-seq(0,1,length=51)[2:26]
-filled.contour(omega,omega,s,xlab="freq",ylab="freq",main="Smoothed 3rd Order Periodogram")
-
-#cleanup
-rm(t,y,a,z,s,omega)
-
+t<-1:5000
+y<-1.1*sin(2*pi*0.3*t)+7*sin(2*pi*0.4*t)+10*rnorm(length(t))
+a<-kzp(y,m=1000)
+plot.kzp(a,c=0.03)
 }
 
 

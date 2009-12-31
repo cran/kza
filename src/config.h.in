@@ -1,0 +1,4 @@
+/* Define to 1 if FFTW3 is to be included */
+/* #define HAVE_FFTW 1 */
+#undef HAVE_FFTW
+

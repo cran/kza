@@ -1,221 +1,362 @@
+#include <stdlib.h>
 #include <R.h>
 #include <Rdefines.h>
-#include <Rinternals.h>
-#include <R_ext/RS.h>
-#include <R_ext/Applic.h>
-#include <Rmath.h>
 #include "kzft.h"
+#include "config.h"
 
+#ifdef HAVE_FFTW
+#include "fftw3.h"
+#endif
 
-int kzft_fft(Rcomplex *z, int m, int inv)
+SEXP check_fftw()
 {
-    int maxf, maxp;
-    double *work;
-    int *iwork;
-    
-    fft_factor(m, &maxf, &maxp);
-    if (maxf == 0) {
-        error("fft factorization error");
-        return NILSXP;
-    }
-    work = (double*)R_alloc(4 * maxf, sizeof(double));
-    iwork = (int*)R_alloc(maxp, sizeof(int));
-    //&(COMPLEX(z)[0].r)
-    fft_work(&(z[0].r), &(z[0].i), 1, m, 1, inv, work, iwork);
-    Free(work);
-    Free(iwork);
-         
-    return 0;
-}    
+	SEXP ans;
+	PROTECT (ans = NEW_LOGICAL(1));
 
+	#ifdef FFTW
+	LOGICAL_DATA(ans)[0] = 1;
+	#else
+	LOGICAL_DATA(ans)[0] = 0;
+	#endif
+	UNPROTECT(1);
+	return ans;
+}
 
-SEXP R_kzft_fft(SEXP z, SEXP r_m, SEXP r_k, SEXP r_inv)
+#ifdef HAVE_FFTW
+//for data that is C99 complex array
+int kzfftw(double *data, int *t, int len, int nr, int nc, double *results)
 {
-    SEXP ans;
-    int m = INTEGER_VALUE(r_m);
-    int k = INTEGER_VALUE(r_k);
-    
-    switch (TYPEOF(z)) {
-    case INTSXP:
-    case LGLSXP:
-    case REALSXP:
-	z = coerceVector(z, CPLXSXP);
-	break;
-    case CPLXSXP:
-	if (NAMED(z)) z = duplicate(z);
-	break;
-    default:
-	error("non-numeric argument");
-    }
-    PROTECT(z);
+  	fftw_plan plan;
+  	fftw_complex *in, *out;
+  	double *p;
 
-    /* -2 for forward transform, complex values */
-    /* +2 for backward transform, complex values */
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
 
-    int inv = asLogical(r_inv);
-    if (inv)
-	    inv = -2;
-    else
-	    inv = 2;
+	plan = fftw_plan_dft_1d(len, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 
-    PROTECT( ans = allocMatrix(CPLXSXP, m, length(z)-m+1)) ;
-	if (ans == NULL) {
-	    error("Warning: Not enough memory.");
-	    return NILSXP;
+  	int index_set_start=0;
+	int index_set;
+	p = results;
+	for (int i=0; i<nr; i++) {
+		int size=0;
+		memset(in, 0, sizeof(fftw_complex) * len);
+		index_set=index_set_start;
+		for (int j = i; j < len+i && index_set<nr; j++) {
+			if (t[index_set] > (j+1)) continue;
+			in[j-i][0] = data[2*index_set];
+			in[j-i][1] = data[2*index_set+1];
+			index_set++;
+			size++;
+			if (j==i) {index_set_start++;}
+		}
+
+		fftw_execute(plan); /* repeat as needed */
+  
+		for (int j = 0; j < len; j++) {
+			p[2*(i+j*nr)] = out[j][0] / size;
+			p[2*(i+j*nr)+1] = out[j][1] / size;
+		}
 	}
 
-    Rcomplex *p_ans=COMPLEX(ans);
-    Rcomplex *p_z=COMPLEX(z);
-
-    int maxf, maxp;
-    double *work;
-    int *iwork;
-    
-    fft_factor(m, &maxf, &maxp);
-    if (maxf == 0) {
-        error("fft factorization error");
-        return NILSXP;
-    }
-    work = (double*)R_alloc(4 * maxf, sizeof(double));
-    iwork = (int*)R_alloc(maxp, sizeof(int));
-    
-    int T=length(z)-(m-1);
-    for (int i=0; i<T; i++) {
-        Memcpy((p_ans+i*m),(p_z+i),m);
-        fft_work(&(p_ans[i*m].r), &(p_ans[i*m].i), 1, m, 1, inv, work, iwork);
-    }
-   
-    UNPROTECT(2);
-    return ans;
-}
-
-//assume i is 1 based index (starts at 1 not zero)
-double coeff(int i, int m, int k)
-{
-    double c;
-    if (k == 1) return (double) 1.0/m;
-    if (k == 2) {
-        int j = (i > m) ? 2*m-i : i;
-        return (double) j/(m*m);
-    } else {
-        double n=k-2+i;
-        double r=k-1;
-        c=choose(n,r)/pow(m,k);
-    }
-    return c;    
-}
-
-SEXP R_coeff(SEXP r_index, SEXP r_m, SEXP r_k)
-{
-    SEXP ans;
-    int i=INTEGER_VALUE(r_index);
-    int m=INTEGER_VALUE(r_m);
-    int k=INTEGER_VALUE(r_k);
-    struct coeff p;
-    
-    p.m=m; p.k=k;
-    double a = coeff(i,m,k);
-    
-    PROTECT(ans = NEW_NUMERIC(1));
-    NUMERIC_POINTER(ans)[0] = a;
-    UNPROTECT(1);
-    return (ans);
-}
-
-
-void test_kzft(double *x, int nrx, int ncx,
-		     int nry, int ncy, Rcomplex *z, const int m, const int r, double *p)
-{
-    int i, j, k;
-    double xij_r, xij_i, yjk_r, yjk_i;
-    double sum_i, sum_r;
-
-    for (i = 0; i < nrx; i++)
-	for (k = 0; k < ncy; k++) {
-	    z[i + k * nrx].r = NA_REAL;
-	    z[i + k * nrx].i = NA_REAL;
-	    sum_r = 0.0;
-	    sum_i = 0.0;
-	    for (j = 0; j < ncx; j++) {
-		    xij_r = x[i + j * nrx];
-		    xij_i = 0; //x[i + j * nrx].i;
-		    double c1=p[j];
-		    double c=coeff(j+1,m,r);
-		    yjk_r = cos((2*PI*(k+1)/ncy) * (-j)) * coeff(j+1,m,r);
-		    yjk_i = sin((2*PI*(k+1)/ncy) * (-j)) * coeff(j+1,m,r);
-		    if (ISNAN(xij_r) || ISNAN(xij_i)
-		        || ISNAN(yjk_r) || ISNAN(yjk_i))
-		    goto next_ik;
-		    sum_r += (xij_r * yjk_r - xij_i * yjk_i);
-		    sum_i += (xij_r * yjk_i + xij_i * yjk_r);
-	    }
-	    z[i + k * nrx].r = sum_r;
-	    z[i + k * nrx].i = sum_i;
-	next_ik:
-	    ;
-	}
-}
-
-void kzft(double *x, int nrx, int ncx,
-		     int nry, int ncy, Rcomplex *z, double *coeff)
-{
-    int i, j, k;
-    double xij_r, xij_i, yjk_r, yjk_i;
-    double sum_i, sum_r;
+  	fftw_destroy_plan(plan);
+	fftw_free(in); fftw_free(out);
 	
-    for (i = 0; i < nrx; i++)
-	for (k = 0; k < ncy; k++) {
-	    z[i + k * nrx].r = NA_REAL;
-	    z[i + k * nrx].i = NA_REAL;
-	    sum_r = 0.0;
-	    sum_i = 0.0;
-	    for (j = 0; j < ncx; j++) {
-		    xij_r = x[i + j * nrx];
-		    xij_i = 0; //x[i + j * nrx].i;
-		    yjk_r = cos((2*PI*(k+1)/ncy) * (-j)) * coeff[j];
-		    yjk_i = sin((2*PI*(k+1)/ncy) * (-j)) * coeff[j];
-		    if (ISNAN(xij_r) || ISNAN(xij_i)
-		        || ISNAN(yjk_r) || ISNAN(yjk_i))
-		    goto next_ik;
-		    sum_r += (xij_r * yjk_r - xij_i * yjk_i);
-		    sum_i += (xij_r * yjk_i + xij_i * yjk_r);
-	    }
-	    z[i + k * nrx].r = sum_r;
-	    z[i + k * nrx].i = sum_i;
-	next_ik:
-	    ;
-	}
+	return 0;
 }
 
-SEXP R_kzft(SEXP x, SEXP r_coeff, SEXP r_m, SEXP r_k, SEXP n, SEXP p)
+SEXP kzftw(SEXP x, SEXP index_set, SEXP M, SEXP ans)
 {
-    SEXP ans;
-    int N, M, L, T;
-    int w;
+	PROTECT(x = AS_NUMERIC(x));
+	PROTECT(ans = AS_NUMERIC(ans));
 
-    N = LENGTH(x);
-    M = (INTEGER_VALUE(r_m)-1)*INTEGER_VALUE(r_k)+1;
-    L = rint(round(M * REAL(p)[0]));
-    T = floor((N-M)/L)+1;
-    w = rint(REAL(n)[0]*INTEGER_VALUE(r_m));
- 
-    double *a = REAL(x);
-    PROTECT( ans = allocMatrix(CPLXSXP, w, T)) ;
-	if (ans == NULL) {
-	    error("Warning: Not enough memory.");
-	    return NILSXP;
-	}
+	double *a = REAL(x);
+	double *p = REAL(ans);
 
-    double *coeff = REAL(r_coeff);
-    Rcomplex *c = COMPLEX(ans);
-    struct coeff poly;
-    int m=INTEGER_VALUE(r_m);
-    int k=INTEGER_VALUE(r_k);
-    for (int i=0; i<T; i++) {
-        kzft(a+(i*L), 1, M, M, w, c+(i*w), coeff);
-//        test_kzft(a+(i*L), 1, M, M, w, c+(i*w), m, k, coeff);
-    }
+	int m=INTEGER_VALUE(M);
 
-    UNPROTECT(1);
-    return(ans);
+	SEXP dims = getAttrib(ans, R_DimSymbol); 
+	int ncols = INTEGER(dims)[1]; 
+	int nfaces = INTEGER(dims)[2]; 
+
+	int *t = INTEGER(index_set);
+
+	kzfftw(a, t, m, ncols, nfaces, p);
+
+	UNPROTECT(2);
+	return(ans);
 }
+
+int fftwz(Rcomplex *data, int *t, int len, int nr, int nc, Rcomplex *results)
+{
+  	fftw_plan plan_forward, plan_backward;
+  	fftw_complex *in, *out;
+	Rcomplex *p;
+
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+
+	plan_forward = fftw_plan_dft_1d(len, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_backward = fftw_plan_dft_1d(len, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+  	int index_set_start=0;
+	int index_set;
+	p = results;
+	for (int i=0; i<nr; i++) {
+		int size=0;
+		memset(in, 0, sizeof(fftw_complex) * len);
+		index_set=index_set_start;
+		for (int j = i; j < len+i && index_set<nr; j++) {
+			if (ISNAN(t[index_set])) continue;
+			if (t[index_set] > (j+1)) continue;
+			in[j-i][0] = data[index_set].r;
+			in[j-i][1] = data[index_set].i;
+			index_set++;
+			size++;
+			if (j==i) {index_set_start++;}
+		}
+
+		fftw_execute(plan_forward);
+		for (int j = 0; j < len; j++) {
+			p[i+j*nr].r = out[j][0] / size;
+			p[i+j*nr].i = out[j][1] / size;
+		}
+	}
+	
+  	fftw_destroy_plan(plan_backward);
+  	fftw_destroy_plan(plan_forward);
+	fftw_free(in); fftw_free(out);
+	
+	return 0;
+}
+
+SEXP kzftwz(SEXP z, SEXP index_set, SEXP M, SEXP ans)
+{
+	PROTECT(z = AS_COMPLEX(z));
+	PROTECT(ans = AS_COMPLEX(ans));
+
+	SEXP dims = getAttrib(ans, R_DimSymbol); 
+	int nrows = INTEGER(dims)[0];
+	int ncols = INTEGER(dims)[1];
+
+	Rcomplex *a = COMPLEX(z);
+	Rcomplex *p = COMPLEX(ans);
+	int *t = INTEGER(index_set);
+
+	int m=INTEGER_VALUE(M);
+
+	fftwz(a, t, m, nrows, ncols, p);
+
+	UNPROTECT(2);
+	return (ans);
+}
+
+int kzp_fftw_1k(double *data, int len, int nr, double *results)
+{
+  	fftw_plan plan_forward, plan_backward;
+  	fftw_complex *in;
+  	fftw_complex *out_forward, *out_backward;
+	double *p;
+
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out_forward = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out_backward = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+
+	plan_forward = fftw_plan_dft_1d(len, in, out_forward, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_backward = fftw_plan_dft_1d(len, in, out_backward, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+	p = results;
+	for (int i=0; i<nr-len; i++) {
+		memset(in, 0, sizeof(fftw_complex) * len);
+		for (int j = i; j < len+i; j++) {
+			in[j-i][0] = data[j];
+		}
+
+		fftw_execute(plan_forward);
+		fftw_execute(plan_backward);
+
+		for (int j = 0; j < len; j++) {
+			p[j] += fabs(out_forward[j][0]*out_backward[j][0] + out_forward[j][1]*out_backward[j][1])/(len*len*len);
+		}
+	}
+	
+  	fftw_destroy_plan(plan_backward);
+  	fftw_destroy_plan(plan_forward);
+	fftw_free(in); 
+	fftw_free(out_forward); 
+	fftw_free(out_backward);
+	
+	return 0;
+}
+
+int kzp_fftwz_1k(Rcomplex *data, int len, int nr, double *results)
+{
+  	fftw_plan plan_forward, plan_backward;
+  	fftw_complex *in;
+  	fftw_complex *out_forward, *out_backward;
+	double *p;
+
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out_forward = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out_backward = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+
+	plan_forward = fftw_plan_dft_1d(len, in, out_forward, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_backward = fftw_plan_dft_1d(len, in, out_backward, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+	p = results;
+	for (int i=0; i<nr-len; i++) {
+		memset(in, 0, sizeof(fftw_complex) * len);
+		for (int j = i; j < len+i; j++) {
+			in[j-i][0] = data[j].r;
+			in[j-i][1] = data[j].i;
+		}
+
+		fftw_execute(plan_forward);
+		fftw_execute(plan_backward);
+
+		for (int j = 0; j < len; j++) {
+			p[j] += fabs(out_forward[j][0]*out_forward[j][0] - out_forward[j][1]*out_forward[j][1])/(len*len*len);
+		}
+	}
+	
+  	fftw_destroy_plan(plan_backward);
+  	fftw_destroy_plan(plan_forward);
+	fftw_free(in); 
+	fftw_free(out_forward); 
+	fftw_free(out_backward);
+	
+	return 0;
+}
+
+SEXP R_kzp_fftw(SEXP y, SEXP M, SEXP ans)
+{
+	Rcomplex *p=COMPLEX(y);
+	double *a=REAL(ans);
+
+	int n=LENGTH(y);
+	int m=INTEGER_VALUE(M);
+	
+	kzp_fftwz_1k(p, m, n, a);
+
+	return (ans);
+}
+
+SEXP R_kzp_fftw_1k(SEXP y, SEXP M, SEXP ans)
+{
+   	double *p=REAL(y);
+	double *a=REAL(ans);
+
+	int n=LENGTH(y);
+	int m=INTEGER_VALUE(M);
+	
+	kzp_fftw_1k(p, m, n, a);
+
+	return (ans);
+}
+
+int fftwz_1d(Rcomplex *data, int *t, int len, int nr, int freq, Rcomplex *results)
+{
+  	fftw_plan plan_forward, plan_backward;
+  	fftw_complex *in, *out;
+	Rcomplex *p;
+
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+
+	plan_forward = fftw_plan_dft_1d(len, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_backward = fftw_plan_dft_1d(len, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+  	int index_set_start=0;
+	int index_set;
+	p = results;
+	for (int i=0; i<nr; i++) {
+		int size=0;
+		memset(in, 0, sizeof(fftw_complex) * len);
+		index_set=index_set_start;
+		for (int j = i; j < len+i && index_set<nr; j++) {
+			if (ISNAN(t[index_set])) continue;
+			if (t[index_set] > (j+1)) continue;
+			in[j-i][0] = data[index_set].r;
+			in[j-i][1] = data[index_set].i;
+			index_set++;
+			size++;
+			if (j==i) {index_set_start++;}
+		}
+
+		fftw_execute(plan_forward);
+		for (int j = 0, k=len-1; j < len; j++, k--) {
+			p[i+j*nr].r = out[j][0] / size;
+			p[i+j*nr].i = out[j][1] / size;
+		}
+	}
+	
+  	fftw_destroy_plan(plan_backward);
+  	fftw_destroy_plan(plan_forward);
+	fftw_free(in); fftw_free(out);
+	
+	return 0;
+}
+
+int fftwz_f(Rcomplex *data, int *t, int len, int nr, int freq, Rcomplex *results)
+{
+  	fftw_plan plan_forward, plan_backward;
+  	fftw_complex *in, *out;
+	Rcomplex *p;
+
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+
+	plan_forward = fftw_plan_dft_1d(len, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_backward = fftw_plan_dft_1d(len, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+  	int index_set_start=0;
+	int index_set;
+	p = results;
+	for (int i=0; i<nr-len; i++) {
+		int size=0;
+		memset(in, 0, sizeof(fftw_complex) * len);
+		index_set=index_set_start;
+		for (int j = i; j < len+i && index_set<nr; j++) {
+			if (ISNAN(t[index_set])) continue;
+			if (t[index_set] > (j+1)) continue;
+			in[j-i][0] = data[index_set].r;
+			in[j-i][1] = data[index_set].i;
+			index_set++;
+			size++;
+			if (j==i) {index_set_start++;}
+		}
+
+		fftw_execute(plan_forward);
+
+		p[i].r = out[freq][0] / size;
+		p[i].i = out[freq][1] / size;
+	}
+	
+  	fftw_destroy_plan(plan_backward);
+  	fftw_destroy_plan(plan_forward);
+	fftw_free(in); fftw_free(out);
+	
+	return 0;
+}
+
+SEXP R_kzftwzf_1d(SEXP z, SEXP index_set, SEXP F, SEXP M, SEXP ans)
+{
+	int n = LENGTH(z);
+
+	PROTECT(z = AS_COMPLEX(z));
+	PROTECT(ans = AS_COMPLEX(ans));
+
+	Rcomplex *a = COMPLEX(z);
+	Rcomplex *p = COMPLEX(ans);
+	int *t = INTEGER(index_set);
+
+	int m=INTEGER_VALUE(M);
+	int f=INTEGER_VALUE(F);	
+
+	fftwz_f(a, t, m, n, f, p);
+
+	UNPROTECT(2);
+	return (ans);
+}
+
+#endif //HAVE_FFTW

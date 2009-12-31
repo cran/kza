@@ -32,6 +32,7 @@ void R_differenced(SEXP, SEXP, SEXP, int);
 double R_maximum(SEXP);
 SEXP R_kzsv(SEXP, SEXP, SEXP, SEXP, SEXP);
 void copyArray(SEXP, SEXP);
+SEXP kzs(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
  
 #ifndef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))

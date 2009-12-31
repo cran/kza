@@ -1,10 +1,10 @@
-\name{kztp}
-\alias{kztp}
+\name{plot.kzp}
+\alias{plot.kzp}
 
-\title{Kolmogorov-Zurbenko Third-Order Periodogram}
+\title{Kolmogorov-Zurbenko Third-Order Periodogram Smoothing Method}
 
 \description{
-  Kolmogorov-Zurbenko Third-Order Periodogram for estimating spectrums
+  Adaptive Smoother for Kolmogorov-Zurbenko Third-Order Periodogram for estimating spectrums
 }
 
 \details{
@@ -12,14 +12,16 @@
 }
 
 \usage{
-kztp(x,m,k,box=c(0,0.5,0,0.5))
+plot.kzp(x, c=0.01, w=length(x), method="DZ", smooth_only=FALSE, ...)
 }
 
 \arguments{
-  \item{x}{The signal.}
-  \item{m}{The window size for the kzft filter.}
-  \item{k}{The number of iterations.}
-  \item{box}{The window for the application of third-order periodgram.}
+  \item{x}{The third-order periodogram output from the kztp function.}
+  \item{c}{The percentage of variation to be used for smoothing.}
+  \item{w}{The width of the smoothing window.}
+  \item{method}{The smoothing method to apply.}
+  \item{smooth_only}{For plotting if user wants only the smoothed kzp.}
+  \item{...}{Other graphics parameters.}
 }
 
 \references{
@@ -36,20 +38,17 @@ kztp(x,m,k,box=c(0,0.5,0,0.5))
 \seealso{
   \code{\link{kzft}},
   \code{\link{kzp}},
-  \code{\link{smooth_kzp}},
+  \code{\link{kztp}},
 }
 
 \examples{
 #
 # example
 #
-t<-1:10000
-y<-sin(2*pi*0.1*t)+3*sin(2*pi*0.2*t) + rnorm(length(t),0,2)
-
-a<-kztp(y,50,1)
-z<-log(Mod(a))
-s<-smooth_kzp(z,0.01,20)
-
-omega<-seq(0,1,length=51)[2:26]
-#filled.contour(omega,omega,s,xlab="freq",ylab="freq",main="Smoothed 3rd Order Periodogram")
+t<-1:5000
+y<-1.1*sin(2*pi*0.3*t)+7*sin(2*pi*0.4*t)+10*rnorm(length(t))
+a<-kzp(y,m=1000)
+plot.kzp(a,c=0.03)
 }
+
+

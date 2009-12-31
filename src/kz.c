@@ -261,3 +261,35 @@ SEXP kz(SEXP x, SEXP window, SEXP iterations)
     return(ans);
 }
 
+// x is the space or independent variable or time variable
+// y is the response variable to be averaged
+// ans is (max(x)-min(x))*scale
+SEXP kzs(SEXP ans, SEXP y, SEXP x, SEXP dx, SEXP q, SEXP iterations, SEXP minx, SEXP maxx)
+{
+	int l;
+
+	// q must be odd integer
+	l = INTEGER_VALUE(q); 
+	
+	// use x to define values of y to be averaged
+	// initial
+	int qi=INTEGER_VALUE(minx);
+	for (int i=0, qj=qi+l; i<INTEGER_VALUE(maxx); i++) 
+	{
+		int s=0,size=0;
+		for (int j=qi;j<qj;j++)
+		{
+			if (REAL(x)[j]<qj) 
+			{
+				s += REAL(y)[j]; 
+				size++;
+			}
+			else break;
+		}
+		if (size) REAL(ans)[i] = s/size;
+		qi += REAL(dx)[0];
+	}
+	
+	return(ans);
+}	
+
