@@ -5,7 +5,7 @@
 #include "config.h"
 
 #ifdef HAVE_FFTW
-#include "fftw3.h"
+#include <fftw3.h>
 #endif
 
 SEXP check_fftw()
@@ -13,7 +13,7 @@ SEXP check_fftw()
 	SEXP ans;
 	PROTECT (ans = NEW_LOGICAL(1));
 
-	#ifdef FFTW
+	#ifdef HAVE_FFTW
 	LOGICAL_DATA(ans)[0] = 1;
 	#else
 	LOGICAL_DATA(ans)[0] = 0;

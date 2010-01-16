@@ -1,7 +1,5 @@
-\name{kzft}
-\alias{kzft}
-\alias{transfer_function}
-\alias{frequency_kzft}
+\name{Rkzft}
+\alias{Rkzft}
 \title{Kolmogorov-Zurbenko Fourier Transform}
 \description{
 Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
@@ -10,12 +8,11 @@ Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
 Kolmogorov-Zurbenko Fourier Transform (KZFT) is the Fourier transform applied over every segment of length m iterated k times. If a frequency is not selected then the frequency with the largest amplitude is used.
 The approach taken here is to iterate fft to create a matrix of frequencies over time, another approach is to use matrices for the KZFT transform (see the KZFT package by Wei Yang in R).
 
-The frequency_kzft function returns the frequency with the largest variation.
+This is the R scripted version of kzft, it does not use FFTW (see README).
+
 }
 \usage{
-kzft(x, m, k = 1, f = NULL, dim = 2, t = NULL, trim=TRUE) 
-frequency_kzft(x, m, start=0, t = NULL)
-transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
+Rkzft(x, m=100, k=1, f=NULL, dim=1)
 }
 \arguments{
   \item{x}{The raw time series}
@@ -23,12 +20,6 @@ transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
   \item{k}{The number of iterations for applying the KZFT}
   \item{f}{The frequency that KZFT is applied at.}
   \item{dim}{A value of 1 will return a vector of the given frequency and a value of 2 will return a matrix (spectra).}
-  \item{t}{An indexing set}
-  \item{trim}{Should function remove n-m data from result.(recommended)}
-  
-  \item{start}{Search for max amplitude begining at start.}
-  \item{lamda}{The frequencies used for the calculating the transfer function.}
-  \item{omega}{The frequency that KZFT is applied at.}
 }
 
 \references{
@@ -81,7 +72,7 @@ tf2<-transfer_function(201,5,lamda,0.025)
 matplot(lamda,cbind(log(tf1),log(tf2)),type="l",ylim=c(-15,0),
 	ylab="Natural log transformation of the coefficients", 
 	xlab="Frequency (cycles/time unit)",
-    main="Transfer function of kzft(201,5) at frequency 0.025")
+    main="Transfer function of Rkzft(201,5) at frequency 0.025")
 
 # example 
 # signal with a frequency of 0.01
@@ -89,9 +80,9 @@ t<-1:1000
 f<-10/1000
 x<-cos(2*pi*f*t) + rnorm(length(t),0,3)
 
-system.time(z1<-kzft(x,m=200,k=1, dim=1))
-system.time(z2<-kzft(x,m=200,k=2, dim=1))
-system.time(z3<-kzft(x,m=200,k=3, dim=1))
+system.time(z1<-Rkzft(x,m=200,k=1, dim=1))
+system.time(z2<-Rkzft(x,m=200,k=2, dim=1))
+system.time(z3<-Rkzft(x,m=200,k=3, dim=1))
 
 par(mfrow=c(2,2))
 plot(x,type="l",main="Original time series",xlab="t", ylab="y")

@@ -1,4 +1,3 @@
 /* src/config.h.  Generated from config.h.in by configure.  */
-/* Define to 1 if FFTW3 is to be included */
+/* HAVE_FFTW should be defined when fftw is present */
 /* #undef HAVE_FFTW */
-

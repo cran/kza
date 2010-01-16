@@ -2,14 +2,10 @@
 
 Rkzft <- function(x, m=100, k=1, f=NULL, dim=1)
 {
-    if (((m-1)*k+1)>length(x))
-   	    stop("invalid 'm' or 'k':(m-1)*k+1 should be less equal length of the input vector x")
-
 	k<-as.integer(k)
 	m<-as.integer(m)
-	n<-length(x)
+
 	if (is.null(nrow(x))) n<-length(x)-m+1 else n=nrow(x)-m+1
-	
 	z<-matrix(nrow=n, ncol=m, byrow=TRUE)
 	for(i in 1:n) {
 		z[i,]=fft(x[i:(m+i-1)])/m
@@ -19,12 +15,12 @@ Rkzft <- function(x, m=100, k=1, f=NULL, dim=1)
 		s<-which.max(colMeans(abs(Re(z)))[1:(m/2)])
 		f<-s/m
 	} else {
-		s<-f*m
+		s<-f*m+1
 	}
 	k<-k-1
 	if (k>0) { 
 		z<-as.vector(z[,s])
-		z<-Rkzft(z,m=m,k=k,f=f,dim=dim)
+		z<-Rkzft(x=z,m=m,k=k,f=f,dim=dim)
 	}
 	if (dim==1 & k==0) z<-as.vector(z[,s])
     return(z);
@@ -41,7 +37,7 @@ Rkzft <- function(x, m=100, k=1, f=NULL, dim=1)
 ##
 kzft<-function (x, m, k = 1, f = NULL, dim = 2, t = NULL, trim=TRUE) 
 {
-	if(FALSE) {
+	if(.Call("check_fftw")) {
 	
 		if (dim > 2) stop("kzft only supports up to 2 dimensions.")
 		k <- as.integer(k)
@@ -102,7 +98,7 @@ Rkzp <- function(y, m=round(length(y)/10), k=1, f=NULL)
 
 kzp <- function(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
 {
-	if(FALSE) {
+	if(.Call("check_fftw")) {
 		z<-vector(mode="numeric", length=m)
 	
 		if (k==1) z<-.Call("kzp_1k",as.double(y),as.integer(m),as.double(z))
@@ -116,8 +112,10 @@ kzp <- function(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
 			}
 			y<-kzft(x=y,m=m,k=(k-1),f=f,dim=1)
 			z<-.Call("kzp",as.complex(y),as.integer(m),as.double(z))
-		}	} else { z<-Rkzp(y,m=m,k=k,f=f) }
-	if (!double_frequency) z<-z[1:(m/2)]
+		}
+	} else { z<-Rkzp(y,m=m,k=k,f=f) }
+
+	if (!double_frequency) z<-z[1:(m/2)]
 	
 	return (log(z))
 }
@@ -145,7 +143,7 @@ kztp <- function(x, m, k, box=c(0,0.5,0,0.5))
     return(d)
 }
 
-frequency_kzft <- function(x, m, t=NULL)
+frequency_kzft <- function(x, m, start=0, t=NULL)
 {
     m <- as.integer(m)
     n <- length(x)
@@ -156,14 +154,15 @@ frequency_kzft <- function(x, m, t=NULL)
     if (is.null(t)) {t<-seq(1,length(x)) } 
     n<-max(t)
 
-    if(FALSE) {
+    if(.Call("check_fftw")) {
         z <- matrix(nrow = n, ncol = m, byrow = TRUE)
         z<-.Call("kzftwz",x,as.integer(t),as.integer(m),as.matrix(z))
     } else {
-	z<-Rkzft(x,m=m,dim=2)
+		z<-Rkzft(x,m=m,dim=2)
     }
 
-    s <- which.max(colMeans(abs(Re(z)))[1:(m/2)])
+	start=start+1
+    s <- which.max(colMeans(abs(Re(z)))[start:(m/2)])
     f <- (s-1)/m
    	
     return (f)

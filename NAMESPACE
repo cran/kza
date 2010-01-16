@@ -1,3 +1,3 @@
 useDynLib(kza)
-export(kz, kza, kzsv, kzft, kztp, kzs, smooth_kzp, transfer_function, kzp, plot.kzp, frequency_kzft)
+export(kz, kza, kzsv, kzft, kztp, kzs, smooth_kzp, transfer_function, kzp, plot.kzp, frequency_kzft, Rkzft, Rkzp)
 

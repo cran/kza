@@ -1,5 +1,5 @@
-\name{kzp}
-\alias{kzp}
+\name{Rkzp}
+\alias{Rkzp}
 
 \title{Kolmogorov-Zurbenko Periodogram}
 
@@ -9,10 +9,11 @@
 
 \details{
   The Kolmogorov-Zurbenko Periodogram is an estimate of the spectral density using the Kolmogorov-Zurbenko Fourier Transform (KZFT).
+  This is the R scripted version that does not use FFTW (see README).
 }
 
 \usage{
-kzp(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
+Rkzp(y, m=round(length(y)/10), k=1, f=NULL)
 }
 
 \arguments{
@@ -20,7 +21,6 @@ kzp(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
   \item{m}{The width of filtering window}
   \item{k}{The number of iterations for the KZFT}
   \item{f}{The frequency that KZFT is applied at.}
-  \item{double_frequency}{The return vector is half the width of the filtering window, setting this to true will give the second half.}
 }
 
 \references{
@@ -48,6 +48,6 @@ kzp(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
 #example 
 t<-1:5000
 y<-1.1*sin(2*pi*0.3*t)+7*sin(2*pi*0.4*t)+10*rnorm(length(t))
-a<-kzp(y,m=1000)
+a<-Rkzp(y,m=1000)
 plot.kzp(a,c=0.03)
 }

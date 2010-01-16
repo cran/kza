@@ -32,7 +32,7 @@ kzs <- function(y,m=round(length(y)/10),k = 1,t=NULL) {
 	if (is.null(t)) a<-kzft(y,m=m,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
 	else a<-kzft(y,m=m,t=t,f=0,k=k,dim=1)[1:length(y)]
 	
-	if (is.ts(y)) ans<-ts(Re(a),start=start(y),frequency=frequency(y))
-	else ans<-Re(a)
+	if (is.ts(y)) ans<-ts(2*Re(a),start=start(y),frequency=frequency(y))
+	else ans<-2*Re(a)
 	return (ans)
 }
