@@ -107,7 +107,7 @@ int fftwz(Rcomplex *data, int *t, int len, int nr, int nc, Rcomplex *results)
 		memset(in, 0, sizeof(fftw_complex) * len);
 		index_set=index_set_start;
 		for (int j = i; j < len+i && index_set<nr; j++) {
-			if (ISNAN(t[index_set])) continue;
+			if (t[index_set] == NA_INTEGER) continue;
 			if (t[index_set] > (j+1)) continue;
 			in[j-i][0] = data[index_set].r;
 			in[j-i][1] = data[index_set].i;
@@ -274,7 +274,7 @@ int fftwz_1d(Rcomplex *data, int *t, int len, int nr, int freq, Rcomplex *result
 		memset(in, 0, sizeof(fftw_complex) * len);
 		index_set=index_set_start;
 		for (int j = i; j < len+i && index_set<nr; j++) {
-			if (ISNAN(t[index_set])) continue;
+			if (t[index_set] == NA_INTEGER) continue;
 			if (t[index_set] > (j+1)) continue;
 			in[j-i][0] = data[index_set].r;
 			in[j-i][1] = data[index_set].i;
@@ -317,7 +317,7 @@ int fftwz_f(Rcomplex *data, int *t, int len, int nr, int freq, Rcomplex *results
 		memset(in, 0, sizeof(fftw_complex) * len);
 		index_set=index_set_start;
 		for (int j = i; j < len+i && index_set<nr; j++) {
-			if (ISNAN(t[index_set])) continue;
+			if (t[index_set] == NA_INTEGER) continue;
 			if (t[index_set] > (j+1)) continue;
 			in[j-i][0] = data[index_set].r;
 			in[j-i][1] = data[index_set].i;
