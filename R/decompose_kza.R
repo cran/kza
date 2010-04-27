@@ -1,5 +1,4 @@
-
-sdecomp<-function(y, k=3, period=c(53,4))
+sdecomp_kza<-function(y, k=3, period=c(53,4))
 {
     if (!is.ts(y)) stop("Time series object required.")
     
@@ -7,11 +6,18 @@ sdecomp<-function(y, k=3, period=c(53,4))
     f <- frequency(y)
     m=period[1]
     
-    trend<-ts(kz(y,q=m,k=k),start=start(y), freq=f)
+    trend<-ts(kza(y,q=m,k=k),start=start(y), freq=f)
+    i=which.max(diff(trend))
+    cp<-i
+	b=max(diff(trend))
+	a<-y[1:i]
+	a2<-y[(i+1):length(y)]-b
 
     seasonal_freq=period[2]
     
-    season<-ts(kz(y-trend,q=seasonal_freq,k=k),start=start(y),frequency=f)
+    #s1<-kz(append(a,a2),q=3,k=1)
+	l<-length(a)
+    season<-ts(kz(a-trend[1:l],q=seasonal_freq,k=k),start=start(y),frequency=f)
 
     periods <- l%/%f
     index <- c(cumsum(rep(f, periods - 1)))
@@ -24,8 +30,10 @@ sdecomp<-function(y, k=3, period=c(53,4))
  	s<-start(seasonal_mean)[2]
  	j<-f-s+2
 	one_season<-seasonal_mean[j:(j+f)]
-
-    fitted<-ts(season+trend, start=start(y), frequency=f)
+	
+    trend2<-ts(kz(y,q=m,k=k),start=start(y), freq=f)
+    season<-ts(kz(y-trend2,q=seasonal_freq,k=k),start=start(y),frequency=f)
+    fitted<-ts(season+trend2, start=start(y), frequency=f)
 
     structure(list(fitted = fitted,
             x = y,
@@ -33,25 +41,29 @@ sdecomp<-function(y, k=3, period=c(53,4))
             seasonal_trend = season,
             seasonal_mean = seasonal_mean,
             one_season = one_season,
-            frequency=seasonal_freq,
-            residuals=y-fitted
+            frequency = seasonal_freq,
+            change_point = cp,
+            residuals = y-fitted
             ),
-        class = "kz")
+        class = "kza")
 }
 
-predict.kz <-
+predict.kza <-
     function (object, n.ahead = 1, level = 0.95, ...)
 {
     f <- frequency(object$x)
     trend<-object$trend
     fitted<-object$fitted
     
-    hw<-HoltWinters(trend)
-
-	p<-predict(hw,n.ahead=n.ahead)
-	d<-p[1]-trend[length(trend)]
-    p=p-d
+    b<-object$change_point
+    a<-ts(trend[(b+1):length(trend)],start=time(trend)[(b+1)],frequency=frequency(trend))
     
+	a2<-lm(a~time(a))
+	p<-predict(a2,n.ahead=n.ahead)
+
+	d<-p[1]-a[length(a)]
+	p=p[1:n.ahead]-d
+	
     et<-end(trend)[2]
     es<-length(object$one_season)-1
     
@@ -71,7 +83,7 @@ predict.kz <-
     return (fit)    
 }
 
-plot.kz <-
+plot.kza <-
     function (x, predicted.values = NA, intervals = TRUE, separator = TRUE,
               col = 1, col.predicted = 2, col.intervals = 4, col.separator = 1,
               lty = 1, lty.predicted = 1, lty.intervals = 1, lty.separator = 3,
@@ -98,7 +110,7 @@ plot.kz <-
     lines(x$x, col = col, lty = lty)
 }
 
-plot.decompose.kz <- function(x, ...)
+plot.decompose.kza <- function(x, ...)
 {
     plot(cbind(
                observed=x$x,
