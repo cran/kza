@@ -1,2 +1,3 @@
-#PKG_LIBS =-Lc:/code/fftw_win -lfftw3-3 -lm
-PKG_CPPFLAGS=-Ic:/code/fftw_win
+PKG_CPPFLAGS=-I$(FFTW_DLL)/
+PKG_LIBS=-L$(FFTW_DLL)/ -l fftw3-3
+

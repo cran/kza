@@ -1,28 +1,40 @@
 \name{kzp}
 \alias{kzp}
-
+\alias{smooth.kzp}
+\alias{nonlinearity.kzp}
+\alias{variation.kzp}
+\alias{summary.kzp}
+\alias{plot.kzp}
 \title{Kolmogorov-Zurbenko Periodogram}
-
 \description{
-  Kolmogorov-Zurbenko periodogram and smoothing using DiRienzo-Zurbenko (DZ) or Neagu-Zurbenko (NZ) methods.
+  Kolmogorov-Zurbenko periodogram and smoothing using DiRienzo-Zurbenko (DZ).
 }
-
 \details{
   The Kolmogorov-Zurbenko Periodogram is an estimate of the spectral density using the Kolmogorov-Zurbenko Fourier Transform (KZFT).
 }
-
 \usage{
-kzp(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
+kzp(y, m=length(y), k=3, f=NULL, double_frequency=FALSE)
+\method{smooth}{kzp}(object, log=TRUE, smooth_level=0.05, method = "DZ")
+\method{nonlinearity}{kzp}(x)
+\method{variation}{kzp}(x)
+\method{summary}{kzp}(object, digits=getOption("digits"), top=NULL, \dots)
+\method{plot}{kzp}(x, \dots)
 }
-
 \arguments{
   \item{y}{The raw data.}
   \item{m}{The width of filtering window}
   \item{k}{The number of iterations for the KZFT}
   \item{f}{The frequency that KZFT is applied at.}
   \item{double_frequency}{The return vector is half the width of the filtering window, setting this to true will give the second half.}
+  \item{object}{Output from kzp function.}
+  \item{log}{Use logarithm values for smoothing.}
+  \item{smooth_level}{Percentage of smoothness to apply.}
+  \item{method}{Method used for smoothing; choices are "DZ" or "NZ".}
+  \item{digits}{precision of output.}
+  \item{top}{list top values}
+  \item{...}{Other parameters.}
+  \item{x}{periodogram}
 }
-
 \references{
   I. G. Zurbenko, 1986: The spectral Analysis of Time Series. North-Holland, 248 pp.
   
@@ -35,19 +47,28 @@ kzp(y, m=round(length(y)/10), k=1, f=NULL, double_frequency=FALSE)
   Wei Yang and Igor Zurbenko, kzft: Kolmogorov-Zurbenko Fourier Transform and Applications, R-Project 2007.
   
 }
-
 \seealso{
   \code{\link{kzft}},
   \code{\link{kztp}},
-  \code{\link{smooth_kzp}},
-  \code{\link{plot.kzp}},  
 }
-
 \examples{
+t<-1:6000
+f1<-0.03
+f2<-0.04
+noise<-15*rnorm(length(t))
+amp=1.5
+s<-amp*sin(2*pi*f1*t)+amp*sin(2*pi*f2*t)
+system.time(a<-kzp(s+noise,500,k=3))
+b<-smooth.kzp(a, smooth_level=0.08)
+par(mfrow=c(3,1))
+plot(periodogram(s+noise),type='l')
+plot(a)
+plot(b)
+par(mfrow=c(1,1))
 
-#example 
-t<-1:5000
-y<-1.1*sin(2*pi*0.3*t)+7*sin(2*pi*0.4*t)+10*rnorm(length(t))
-a<-kzp(y,m=1000)
-plot.kzp(a,c=0.03)
+# signal/noise
+signal<-kzft(s+noise,m=500,k=3,dim=1)
+print(paste("signal-to-noise ratio = ", round(sqrt(var(2*Re(signal))/var(s+noise)),4) ))
+
+summary(a, digits=2, top=2)
 }

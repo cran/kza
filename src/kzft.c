@@ -2,27 +2,18 @@
 #include <R.h>
 #include <Rdefines.h>
 #include "kzft.h"
-#include "config.h"
-
-#ifdef HAVE_FFTW
 #include <fftw3.h>
-#endif
 
 SEXP check_fftw()
 {
 	SEXP ans;
 	PROTECT (ans = NEW_LOGICAL(1));
 
-	#ifdef HAVE_FFTW
 	LOGICAL_DATA(ans)[0] = 1;
-	#else
-	LOGICAL_DATA(ans)[0] = 0;
-	#endif
 	UNPROTECT(1);
 	return ans;
 }
 
-#ifdef HAVE_FFTW
 //for data that is C99 complex array
 int kzfftw(double *data, int *t, int len, int nr, int nc, double *results)
 {
@@ -130,6 +121,52 @@ int fftwz(Rcomplex *data, int *t, int len, int nr, int nc, Rcomplex *results)
 	return 0;
 }
 
+int fftwzc(Rcomplex *data, int *t, int len, double *c, int nr, int nc, Rcomplex *results)
+{
+  	fftw_plan plan_forward, plan_backward;
+  	fftw_complex *in, *out;
+	Rcomplex *p;
+
+	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * len);
+
+	plan_forward = fftw_plan_dft_1d(len, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_backward = fftw_plan_dft_1d(len, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+  	int index_set_start=0;
+	int index_set;
+	p = results;
+	for (int i=0; i<nr; i++) {
+		int size=0;
+		memset(in, 0, sizeof(fftw_complex) * len);
+		index_set=index_set_start;
+		for (int j = i; j < len+i && index_set<nr; j++) {
+			if (t[index_set] == NA_INTEGER) continue;
+			if (t[index_set] > (j+1)) continue;
+			in[j-i][0] = data[index_set].r;
+			in[j-i][1] = data[index_set].i;
+			index_set++;
+			size++;
+			if (j==i) {index_set_start++;}
+		}
+		for (int j=0; j<len; j++){
+			in[j][0] = in[j][0]*c[j];
+		}
+
+		fftw_execute(plan_forward);
+		for (int j = 0; j < len; j++) {
+			p[i+j*nr].r = out[j][0];
+			p[i+j*nr].i = out[j][1];
+		}
+	}
+	
+  	fftw_destroy_plan(plan_backward);
+  	fftw_destroy_plan(plan_forward);
+	fftw_free(in); fftw_free(out);
+	
+	return 0;
+}
+
 SEXP kzftwz(SEXP z, SEXP index_set, SEXP M, SEXP ans)
 {
 	PROTECT(z = AS_COMPLEX(z));
@@ -146,6 +183,29 @@ SEXP kzftwz(SEXP z, SEXP index_set, SEXP M, SEXP ans)
 	int m=INTEGER_VALUE(M);
 
 	fftwz(a, t, m, nrows, ncols, p);
+
+	UNPROTECT(2);
+	return (ans);
+}
+
+SEXP kzftwzc(SEXP z, SEXP index_set, SEXP M, SEXP coeff, SEXP ans)
+{
+	PROTECT(z = AS_COMPLEX(z));
+	PROTECT(ans = AS_COMPLEX(ans));
+	
+	double *c = REAL(coeff);
+
+	SEXP dims = getAttrib(ans, R_DimSymbol); 
+	int nrows = INTEGER(dims)[0];
+	int ncols = INTEGER(dims)[1];
+
+	Rcomplex *a = COMPLEX(z);
+	Rcomplex *p = COMPLEX(ans);
+	int *t = INTEGER(index_set);
+
+	int m=INTEGER_VALUE(M);
+
+	fftwzc(a, t, m, c, nrows, ncols, p);
 
 	UNPROTECT(2);
 	return (ans);
@@ -215,7 +275,7 @@ int kzp_fftwz_1k(Rcomplex *data, int len, int nr, double *results)
 		fftw_execute(plan_backward);
 
 		for (int j = 0; j < len; j++) {
-			p[j] += fabs(out_forward[j][0]*out_forward[j][0] - out_forward[j][1]*out_forward[j][1])/(len*len*len);
+			p[j] += fabs(out_forward[j][0]*out_forward[j][0] - out_forward[j][1]*out_forward[j][1])/(len*len);
 		}
 	}
 	
@@ -358,5 +418,3 @@ SEXP R_kzftwzf_1d(SEXP z, SEXP index_set, SEXP F, SEXP M, SEXP ans)
 	UNPROTECT(2);
 	return (ans);
 }
-
-#endif //HAVE_FFTW

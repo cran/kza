@@ -1,7 +1,7 @@
 \name{kzft}
 \alias{kzft}
+\alias{max_freq}
 \alias{transfer_function}
-\alias{frequency_kzft}
 \title{Kolmogorov-Zurbenko Fourier Transform}
 \description{
 Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
@@ -13,8 +13,8 @@ The approach taken here is to iterate fft to create a matrix of frequencies over
 The frequency_kzft function returns the frequency with the largest variation.
 }
 \usage{
-kzft(x, m, k = 1, f = NULL, dim = 2, t = NULL, trim=TRUE) 
-frequency_kzft(x, m, start=0, t = NULL)
+kzft(x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL) 
+max_freq(x, m, start=1, t = NULL)
 transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
 }
 \arguments{
@@ -23,14 +23,12 @@ transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
   \item{k}{The number of iterations for applying the KZFT}
   \item{f}{The frequency that KZFT is applied at.}
   \item{dim}{A value of 1 will return a vector of the given frequency and a value of 2 will return a matrix (spectra).}
-  \item{t}{An indexing set}
-  \item{trim}{Should function remove n-m data from result.(recommended)}
-  
+  \item{index}{An indexing set}
   \item{start}{Search for max amplitude begining at start.}
+  \item{t}{An indexing set}
   \item{lamda}{The frequencies used for the calculating the transfer function.}
   \item{omega}{The frequency that KZFT is applied at.}
 }
-
 \references{
   I. G. Zurbenko, The spectral Analysis of Time Series. North-Holland, 1986.
   
@@ -42,17 +40,16 @@ transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
   
   Wei Yang and Igor Zurbenko, kzft: Kolmogorov-Zurbenko Fourier Transform and Applications, R-Project 2007.
   
+  Igor G. Zurbenko, Amy L. Potrzeba, Tidal Waves in Atmosphere and Their Effects, Acta Geophysica Volume 58, Number 2, 356-373
+  
 }
-
 \seealso{
   \code{\link{kzp}},
   \code{\link{kztp}},
 }
-
 \examples{
 # example taken from Wei Yang's KZFT package
 # coefficients of kzft(201,5)
-
 
 # function to calculate polnomial coefficients for kzft
 #require(polynom)
@@ -84,19 +81,26 @@ matplot(lamda,cbind(log(tf1),log(tf2)),type="l",ylim=c(-15,0),
     main="Transfer function of kzft(201,5) at frequency 0.025")
 
 # example 
-# signal with a frequency of 0.01
-t<-1:1000
-f<-10/1000
-x<-cos(2*pi*f*t) + rnorm(length(t),0,3)
+# signal with a frequency of 0.03
+t<-1:6000
+f<-0.03
+s<-4*sin(2*pi*f*t)
+noise<-10*rnorm(length(t))
+x<-s+noise
 
 system.time(z1<-kzft(x,m=200,k=1, dim=1))
 system.time(z2<-kzft(x,m=200,k=2, dim=1))
 system.time(z3<-kzft(x,m=200,k=3, dim=1))
+system.time(z4<-kzft(x,m=200,k=4, dim=1))
 
 par(mfrow=c(2,2))
-plot(x,type="l",main="Original time series",xlab="t", ylab="y")
-plot(2*Re(z1),type="l",main="kzft(200,1)",xlab="t", ylab="y")
-plot(2*Re(z2),type="l",main="kzft(200,2)",xlab="t", ylab="y")
-plot(2*Re(z3),type="l",main="kzft(200,3)",xlab="t", ylab="y")
+plot(x[1:1000],type="l",main="Original time series",xlab="t", ylab="y")
+lines(s,col="blue")
+plot(2*Re(z1)[1:1000],type="l",main="kzft(200,1)",xlab="t", ylab="y", ylim=c(-6,6))
+lines(s,col="blue")
+plot(2*Re(z2)[1:1000],type="l",main="kzft(200,2)",xlab="t", ylab="y", ylim=c(-6,6))
+lines(s,col="blue")
+plot(2*Re(z3)[1:1000],type="l",main="kzft(200,3)",xlab="t", ylab="y", ylim=c(-6,6))
+lines(s,col="blue")
 par(mfrow=c(1,1))
 }

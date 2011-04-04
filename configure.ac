@@ -1,28 +1,43 @@
-AC_PREREQ(2.50)
-AC_INIT([kza], [1.02], [brian.close@gmail.com])
+## 
+## This file is part of fftw
+##
+## Process this file with autoconf to produce a configure script.
+##
 
-: ${R_HOME=`R RHOME`}
-if test -z "${R_HOME}"; then
- echo "could not determine R_HOME"
- exit 1
+AC_PREREQ(2.61)
+
+## ---[ VERSION ]-------------------------------------------------------------
+
+AC_INIT()
+AC_CONFIG_AUX_DIR(src/build/autoconf)
+
+## pick up compiler as will be used by R CMD INSTALL/SHLIB
+if test -n "${R_HOME}"; then
+  CC=`${R_HOME}/bin/R CMD config CC`
+  CPP=`${R_HOME}/bin/R CMD config CPP`
+  CFLAGS=`${R_HOME}/bin/R CMD config CFLAGS`
+  CXX=`${R_HOME}/bin/R CMD config CXX`
+  CXXFLAGS=`${R_HOME}/bin/R CMD config CXXFLAGS`
 fi
-CC=`"${R_HOME}/bin/R" CMD config CC`
-CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
-CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 
+AC_PROG_CPP
 AC_PROG_CC
 
-AC_CHECK_LIB(fftw3, fftw_execute, [], [], [-lm])
+if test `uname` = "Darwin" ; then
+  darwin="yes"
+else
+  darwin="no"
+fi
 
-# Checks for header files.
-AC_HEADER_STDC
+## --- FFTW 3 ----------------------------------------------------------------
+PKG_CHECK_MODULES(FFTW, fftw3)
 
-AC_CHECK_HEADERS([fftw3.h], [HAVE_FFTW=TRUE; AC_DEFINE(HAVE_FFTW)], [HAVE_FFTW=FALSE; AC_MSG_WARN([Can't find fftw3 header])])
+## --- Output ----------------------------------------------------------------
+AC_SUBST(FFTW_CFLAGS)
+AC_SUBST(FFTW_LIBS)
 
+AC_SUBST(CPPFLAGS)
+AC_SUBST(CXXFLAGS)
 AC_SUBST(LIBS)
-AC_SUBST(HAVE_FFTW)
 
-AC_CONFIG_HEADERS([src/config.h])
-
-AC_CONFIG_FILES([src/Makevars])
-AC_OUTPUT
+AC_OUTPUT(src/Makevars)

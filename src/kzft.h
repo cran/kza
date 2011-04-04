@@ -38,6 +38,7 @@ SEXP R_kzp_fftw(SEXP, SEXP, SEXP);
 SEXP R_kzp_fftw_1k(SEXP, SEXP, SEXP);
 SEXP R_kzftwzf_1d(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP check_fftw(void);
+SEXP kzftwzc(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 double coeff(int, int, int);
 

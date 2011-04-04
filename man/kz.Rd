@@ -8,11 +8,11 @@
   KZ is an iterated moving average. The filter can be used with missing values.
 }
 \usage{
-kz(x, q, k = 3)
+kz(x, m, k = 3)
 }
 \arguments{
   \item{x}{A vector of the time series.}
-  \item{q}{Window size for the filter.}
+  \item{m}{Window size for the filter.}
   \item{k}{Number of iterations.}
 }
 \references{
@@ -45,4 +45,4 @@ par(mfrow=c(2,1))
 plot(y,type="l",main="y = sin(2*pi*t)+sin(3*pi*t) + noise")
 plot(k.kz,type="l",main="KZ filter")
 }
-\keyword{ts}
+\keyword{kz}

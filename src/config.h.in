@@ -1,2 +1,0 @@
-/* HAVE_FFTW should be defined when fftw is present */
-#undef HAVE_FFTW

@@ -19,6 +19,5 @@ change kza/src/config.h to the following
 
 R CMD INSTALL kza
 
-
 Brian Close
 brian.close@gmail.com

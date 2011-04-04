@@ -1,3 +1,2 @@
 useDynLib(kza)
-export(kz, kza, kzsv, kzft, kztp, kzs, smooth_kzp, transfer_function, kzp, plot.kzp, frequency_kzft, Rkzft, Rkzp)
-
+export(kz, kza, kzsv, kzft, kztp, kzs, kzp, plot.kzp, summary.kzp, periodogram, max_freq, smooth.kzp, variation.kzp, nonlinearity.kzp, transfer_function, kz_decompose, plot.kzd, trend.kzd, fitted.kzd, residuals.kzd, frequency.kzd, summary.kzd, predict.kzd)
