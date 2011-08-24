@@ -13,7 +13,7 @@ The approach taken here is to iterate fft to create a matrix of frequencies over
 The frequency_kzft function returns the frequency with the largest variation.
 }
 \usage{
-kzft(x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL) 
+kzft(x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL, trim=FALSE) 
 max_freq(x, m, start=1, t = NULL)
 transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
 }
@@ -24,6 +24,7 @@ transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
   \item{f}{The frequency that KZFT is applied at.}
   \item{dim}{A value of 1 will return a vector of the given frequency and a value of 2 will return a matrix (spectra).}
   \item{index}{An indexing set}
+  \item{trim}{Remove k*m from edges of array.}
   \item{start}{Search for max amplitude begining at start.}
   \item{t}{An indexing set}
   \item{lamda}{The frequencies used for the calculating the transfer function.}
@@ -80,27 +81,34 @@ matplot(lamda,cbind(log(tf1),log(tf2)),type="l",ylim=c(-15,0),
 	xlab="Frequency (cycles/time unit)",
     main="Transfer function of kzft(201,5) at frequency 0.025")
 
-# example 
-# signal with a frequency of 0.03
-t<-1:6000
-f<-0.03
-s<-4*sin(2*pi*f*t)
-noise<-10*rnorm(length(t))
+# example with missing values
+period=101
+f<-1/period
+t<-1:2000
+s<-1*sin(2*pi*f*t)
+x<-s
+noise<-3*rnorm(length(t))
 x<-s+noise
+m=101
 
-system.time(z1<-kzft(x,m=200,k=1, dim=1))
-system.time(z2<-kzft(x,m=200,k=2, dim=1))
-system.time(z3<-kzft(x,m=200,k=3, dim=1))
-system.time(z4<-kzft(x,m=200,k=4, dim=1))
+rand_idx <- sample(t,100,replace=FALSE)
+x[rand_idx]<-NA
+t[rand_idx]<-NA
+x<-as.vector(na.omit(x))
+t<-as.vector(na.omit(t))
+
+system.time(z1<-kzft(x, m=m, k=1, f=f, dim=1, index=t))
+system.time(z2<-kzft(x, m=m, k=2, f=f, dim=1, index=t))
+system.time(z3<-kzft(x, m=m, k=3, f=f, dim=1, index=t))
 
 par(mfrow=c(2,2))
-plot(x[1:1000],type="l",main="Original time series",xlab="t", ylab="y")
+plot(x,type="l",main="Original time series",xlab="t", ylab="y")
 lines(s,col="blue")
-plot(2*Re(z1)[1:1000],type="l",main="kzft(200,1)",xlab="t", ylab="y", ylim=c(-6,6))
+plot(2*Re(z1),type="l",main="kzft(101,1)",xlab="t", ylab="y", ylim=c(-6,6))
 lines(s,col="blue")
-plot(2*Re(z2)[1:1000],type="l",main="kzft(200,2)",xlab="t", ylab="y", ylim=c(-6,6))
+plot(2*Re(z2),type="l",main="kzft(101,2)",xlab="t", ylab="y", ylim=c(-6,6))
 lines(s,col="blue")
-plot(2*Re(z3)[1:1000],type="l",main="kzft(200,3)",xlab="t", ylab="y", ylim=c(-6,6))
+plot(2*Re(z3),type="l",main="kzft(101,3)",xlab="t", ylab="y", ylim=c(-6,6))
 lines(s,col="blue")
 par(mfrow=c(1,1))
 }

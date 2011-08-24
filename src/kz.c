@@ -1,6 +1,6 @@
 /*
     kz.c
-    Copyright (C) 2005 Brian D. Close
+    Copyright (C) 2011 Brian D. Close
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -292,4 +292,3 @@ SEXP kzs(SEXP ans, SEXP y, SEXP x, SEXP dx, SEXP q, SEXP iterations, SEXP minx, 
 	
 	return(ans);
 }	
-

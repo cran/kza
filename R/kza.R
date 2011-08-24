@@ -1,3 +1,4 @@
+.packageName <- "kza"
 
 kz <- function(x,m,k = 3) {
     if (length(dim(x)) > 3) stop("Too many dimensions.")
@@ -153,10 +154,11 @@ kzs <- function(y,m=NULL,k=3,t=NULL)
 		if (m>length(y)) m=2
 	}		
 	
-	if (is.null(t)) a<-kzfti(y,m=m,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
-	else a<-kzfti(y,m=m,index=t,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
+	if (is.null(t)) a<-kzft(y,m=m,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
+	else a<-kzft(y,m=m,index=t,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
 	
 	if (is.ts(y)) ans<-ts(Re(a),start=start(y),frequency=frequency(y))
 	else ans<-Re(a)
 	return (ans)
 }
+

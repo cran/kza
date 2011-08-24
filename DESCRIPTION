@@ -1,6 +1,6 @@
 Package: kza
-Version: 2.00
-Date: 2011/04/04
+Version: 2.01
+Date: 2011/08/24
 Title: Kolmogorov-Zurbenko Adaptive Filters
 Author: Brian Close <brian.close@gmail.com> and Igor Zurbenko
         <IZurbenko@albany.edu>
@@ -11,6 +11,6 @@ Depends: polynom
 SystemRequirements: fftw (>= 3.2.2)
 LazyLoad: yes
 License: GPL-3
-Packaged: 2011-06-07 03:34:46 UTC; bc
+Packaged: 2011-09-06 05:14:49 UTC; bc
 Repository: CRAN
-Date/Publication: 2011-06-07 06:36:00
+Date/Publication: 2011-09-08 04:11:06

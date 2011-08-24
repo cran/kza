@@ -13,7 +13,7 @@
   The Kolmogorov-Zurbenko Periodogram is an estimate of the spectral density using the Kolmogorov-Zurbenko Fourier Transform (KZFT).
 }
 \usage{
-kzp(y, m=length(y), k=3, f=NULL, double_frequency=FALSE)
+kzp(y, m=length(y), k=3, index=NULL, double_frequency=FALSE)
 \method{smooth}{kzp}(object, log=TRUE, smooth_level=0.05, method = "DZ")
 \method{nonlinearity}{kzp}(x)
 \method{variation}{kzp}(x)
@@ -24,7 +24,7 @@ kzp(y, m=length(y), k=3, f=NULL, double_frequency=FALSE)
   \item{y}{The raw data.}
   \item{m}{The width of filtering window}
   \item{k}{The number of iterations for the KZFT}
-  \item{f}{The frequency that KZFT is applied at.}
+  \item{index}{An indexing set}
   \item{double_frequency}{The return vector is half the width of the filtering window, setting this to true will give the second half.}
   \item{object}{Output from kzp function.}
   \item{log}{Use logarithm values for smoothing.}

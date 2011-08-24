@@ -2,56 +2,40 @@
 
 coeff<-function(m, k){as.vector(polynomial(rep(1,m))^k/m^k)}
 
-kzfti<-function (x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL, trim=TRUE) 
-{
-		if (dim > 2) stop("kzft only supports up to 2 dimensions.")
-		k <- as.integer(k)
-	    m <- as.integer(m)
-	    loops=k
-	    
-		######
-		# if no indexing set t and a frequency (f) is not supplied, assume a spectrum analysis
-		#####
-	    if (is.null(index)) {
-			if (is.null(f)) { 
-				index<-seq(1,length(x)) 
-			} else {
-				if (f==0) { index<-seq(m/2,length(x)+m/2-1) }
-				else { index<-seq(1,length(x)) }
-			}
-		}
-	
-		n<-max(index)
-	    z <- matrix(nrow = n, ncol = m, byrow = TRUE)
-	    z<-.Call("kzftwz",x,as.integer(index),as.integer(m),as.matrix(z))
-	
-		if (is.null(f)) {
-			s <- which.max(colMeans(abs(Re(z)))[1:(m/2)])
-	    	f <- (s-1)/m
-		} else { s <- f * m + 1	}
-	
-		if (k>1) {
-			if (f==0) { index<-seq(m/2,length(z[,s])+m/2-1) }
-			else { index<-seq(1,length(z[,s])) }
-			
-		    for (i in 2:k) {
-				z<-.Call("kzftwz",z[,s],as.integer(index),as.integer(m),as.matrix(z))
-			}
-		}
-
-		## remove m at the end of array
-		if (trim & (n-m*loops)>0) z<-z[1:(n-m*loops),]
-	    if (dim==1) z<-as.vector(z[,s])
-	    
-    return (z)
-}
-
-kzft<-function (x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL) 
+kzft<-function (x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL, trim=FALSE) 
 {
 	if (dim > 2) stop("kzft only supports up to 2 dimensions.")
 	k <- as.integer(k)
 	m <- as.integer(m)
+	loops=k
+
+	if (dim==1 & !is.null(f)) {
+		
+		scale=1
+		if (is.null(index)) { 
+			index=seq(1:length(x));
+			index<-index[!is.na(x)];
+		}
+
+		if (max(is.na(index))) stop("Index cannot have NA values");
+		for (i in 1:k) {
+			x<-as.vector(na.omit(x))
+			index<-as.vector(na.omit(index))
+			y.r<-vector(mode="numeric", length=(max(index)));
+			y.i<-vector(mode="numeric", length=(max(index)));
+			s<-.C("ckzft", as.double(y.r), as.double(y.i), as.double(x), as.integer(length(x)), 
+				as.double(index), as.double(m), as.double(scale), as.double(f), NAOK=TRUE, DUP=FALSE, PACKAGE="kza");
+			x<-2*y.r;
+			index<-seq(1:length(x));
+			index<-index[!is.na(x)];
+		}
+		if (trim) { y.r<-y.r[(k*(m-1)/2):(length(y.r)-k*(m-1)/2)]; y.i<-y.i[(k*(m-1)/2):(length(y.i)-k*(m-1)/2)]; }
+		z<-complex(real=y.r, imag=y.i);
 	
+		return (z)
+	}
+
+	    
 	######
 	# if no indexing set t and a frequency (f) is not supplied, assume a spectrum analysis
 	#####
@@ -65,21 +49,28 @@ kzft<-function (x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL)
 	}
 	
 	n<-max(index)
-	z<-matrix(nrow=n, ncol=(k*(m-1)+1), byrow=TRUE)
-	c<-coeff(m,k)
-	M<-k*(m-1)+1
-	z<-.Call("kzftwzc",x,as.integer(index),as.integer(M),as.double(c),as.matrix(z))
+	z <- matrix(nrow = n, ncol = m, byrow = TRUE)
+	z<-.Call("kzftwz",x,as.integer(index),as.integer(m),as.matrix(z))
 	
 	if (is.null(f)) {
-		s<-which.max(colMeans(abs(Re(z)), na.rm = TRUE)[1:(m/2)])
-		f<-(s-1)/M
-	} else {s<-round(f*M+1)}
+		s <- which.max(colMeans(abs(Re(z)))[1:(m/2)])
+		f <- (s-1)/m
+	} else { s <- f * m + 1	}
 	
+	if (k>1) {
+		if (f==0) { index<-seq(m/2,length(z[,s])+m/2-1) }
+		else { index<-seq(1,length(z[,s])) }
+		
+		for (i in 2:k) {
+			z<-.Call("kzftwz",z[,s],as.integer(index),as.integer(m),as.matrix(z))
+		}
+	}
+
 	## remove m at the end of array
-	if ((n-m*k)>0) z<-z[1:(n-m*k),]
+	if (trim & (n-m*loops)>0) z<-z[1:(n-m*loops),]
 	if (dim==1) z<-as.vector(z[,s])
-	
-    return (z)
+	    
+	return (z)
 }
 
 Rkzft <- function(x, m=length(x), k=1, f=NULL, dim=2, c=NULL)
@@ -129,10 +120,10 @@ kztp <- function(x, m, k, box=c(0,0.5,0,0.5))
     return(d)
 }
 
-kzp <- function(y, m=length(y), k=3, f=NULL, double_frequency=FALSE)
+kzp <- function(y, m=length(y), k=3, index=NULL, double_frequency=FALSE)
 {
 	M<-(m-1)*k+1
-	z<-kzft(y,m=m,k=k,f=f,dim=2)
+	z<-kzft(y,m=m,k=k,index=index,dim=2)
 	d<-apply(z,2,function(z) {(abs(z)^2)*M})
 	if (is.null(dim(d))) a=d  else a<-colMeans(d)
 
@@ -217,10 +208,10 @@ summary.kzp <- function(object, digits = getOption("digits"), top=NULL, ...)
 	}
 
     cat("\n Frequencies of interest:\n")
-    print(mlist/(object$k*(object$window-1)), digits=digits, ...)
+    print((mlist)/(object$k*(object$window)), digits=digits, ...)
 
     cat("\n Periods of interest:\n")
-    print((object$k*(object$window-1))/mlist, digits=digits, ...)
+    print((object$k*(object$window))/(mlist), digits=digits, ...)
     invisible(object)
 }
 
@@ -295,6 +286,7 @@ variation.kzp<-function(x)
 
 smooth.kzp<-function(object, log=TRUE, smooth_level=0.05, method = "DZ")
 {
+	if (class(object)!='kzp') stop ("Object type needs to be kzp.")
     n<-length(object$periodogram)
     spg<-rep(0,n)
     m<-rep(0,n)
