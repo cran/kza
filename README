@@ -3,21 +3,5 @@ kza R Package
 -------------
 Time Series Analysis including break detection, spectral analysis, KZ Fourier Transforms.
 
-You will need support for Fast Fourier Transformations so you will need libfftw3 installed on your system. 
-You can download it from http://fftw.org/download.html or through the debian/ubuntu repositories. 
-For windows users, you can get it from ftp://ftp.fftw.org/pub/fftw/fftw-3.2.2.pl1-dll32.zip.
-
-Linux users can use autoconf.
-
-Windows Users:
-To build the package with fftw support; 
-install rtools,
-add fftw to the PATH environment variable,
-change kza/src/Makevars.win to use the appropriate paths to fftw and version (currently fftw3-3)
-change kza/src/config.h to the following
-#define HAVE_FFTW 1
-
-R CMD INSTALL kza
-
 Brian Close
 brian.close@gmail.com

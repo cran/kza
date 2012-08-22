@@ -8,7 +8,7 @@ kz <- function(x,m,k = 3) {
     	f=frequency(x)
     } else {TS=FALSE}
     storage.mode(x) <- "double"
-    x <- .Call("kz", x, as.integer(round(m/2)), as.integer(k), PACKAGE="kza")
+    x <- .Call("kz", x, as.vector(as.integer(floor(m/2))), as.integer(k))
     if (TS) {
     	x<-ts(x, start=start, frequency=f)
     }
@@ -26,7 +26,7 @@ kza <- function(x, m, y = NULL, k = 3, min_size = round(0.05*m), tol = 1.0e-5, i
     } else {TS=FALSE}
     
     storage.mode(x) <- storage.mode(y) <- "double"
-    kza.x <- .Call("kza", x, y, as.integer(round(m/2)), as.integer(k), as.integer(min_size), as.double(tol), PACKAGE="kza")
+    kza.x <- .Call("kza", x, y, as.vector(as.integer(floor(m))), as.integer(k), as.integer(min_size), as.double(tol))
     if (TS) {
     	kza.x<-ts(kza.x, start=start, frequency=f)
     }
@@ -68,7 +68,7 @@ kzsv <- function(object)
 	if (class(object) == "kza") {y=object}
 	else { stop("Need to use result from kza!") }
 	
-    s <- .Call("kzsv", y$kza, y$kz, y$window, y$k, y$m, y$tol, PACKAGE="kza")
+    s <- .Call("kzsv", y$kza, y$kz, y$window, y$k, y$m, y$tol)
 
     if (is.ts(y$kz)) s<-ts(s, frequency=frequency(y$kz), start=start(y$kz))
 
@@ -154,8 +154,8 @@ kzs <- function(y,m=NULL,k=3,t=NULL)
 		if (m>length(y)) m=2
 	}		
 	
-	if (is.null(t)) a<-kzft(y,m=m,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
-	else a<-kzft(y,m=m,index=t,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
+	if (is.null(t)) a<-kzfti(y,m=m,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
+	else a<-kzfti(y,m=m,index=t,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
 	
 	if (is.ts(y)) ans<-ts(Re(a),start=start(y),frequency=frequency(y))
 	else ans<-Re(a)

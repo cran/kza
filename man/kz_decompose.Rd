@@ -21,7 +21,7 @@ kz_decompose(y, k=3, period=NULL)
 \method{trend}{kzd}(object, \dots)
 \method{frequency}{kzd}(x, \dots)
 \method{predict}{kzd}(object, n.ahead = 1, prediction.interval = FALSE, level = 0.95, \dots)
-\method{plot}{kzd}(x, \dots)
+\method{plot}{kzd}(x, main = paste("KZ Decomposition of time series"), \dots)
 \method{summary}{kzd}(object, digits=getOption("digits"), \dots)
 }
 \arguments{
@@ -35,6 +35,7 @@ kz_decompose(y, k=3, period=NULL)
   \item{prediction.interval}{prediction interval level}
   \item{level}{level}
   \item{digits}{precision}
+  \item{main}{Plot title.}
 }
 \examples{
 yrs <- 20

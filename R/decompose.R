@@ -13,7 +13,7 @@ kz_decompose<-function(y, k=3, period=NULL)
 	}
 
     m=period[1]
-    trend<-ts(kz(y,m=m,k=k),start=start(y), freq=f)
+    trend<-ts(kz(y,m=m,k=k),start=start(y), frequency=f)
 
     seasonal_freq=period[2]
     season<-ts(kz(y-trend,m=seasonal_freq,k=k),start=start(y),frequency=f)
@@ -24,10 +24,11 @@ kz_decompose<-function(y, k=3, period=NULL)
     for (i in 1L:f) figure[i] <- mean(season[index + i])   
     
     one_season = ts(figure,start=start(y), frequency=f)
-    seasonal_mean <- ts(rep(figure, periods), start = start(y), frequency = f)
+    seasonal_mean <- ts(rep(figure, periods+1), start = start(y), frequency = f)
 	seasonal_mean <- ts(kz(seasonal_mean,m=2,k=3), start = start(y), frequency = f)
  	s<-start(seasonal_mean)[2]
- 	j<-f-s+2
+ 	s[is.na(start(seasonal_mean)[2])] <- 0 
+ 	j<-trunc(f-s+1)
 	one_season<-seasonal_mean[j:(j+f)]
 
     fitted<-ts(season+trend, start=start(y), frequency=f)
@@ -47,42 +48,33 @@ kzd<-kz_decompose
 predict.kzd <-
     function (object, n.ahead = 1, prediction.interval = FALSE, level = 0.95, ...)
 {
-    f <- frequency.kzd(object)
     trend<-trend.kzd(object)
     fitted<-fitted.kzd(object)
     
     hw<-HoltWinters(trend, gamma=FALSE)
 
 	p<-predict(hw,n.ahead=n.ahead, level=level, prediction.interval=prediction.interval)
-#	d<-p[1]-trend[length(trend)]
-#   p=p[1]-d
     
-    t1<-end(trend)[2]
-    t2<-n.ahead+t1-1
-    
+    f <- frequency(trend)
+    periods<-round(length(p)/f)+1
+    t1<-tsp(trend)[2]%%1 * f+1
     s<-object$one_season
-    iterations = trunc(t2/length(object$one_season))
-    while (iterations>0) {
-    	s<-append(s,s)
-    	iterations=iterations-1
-	}    	
-    	
-    fit<-p[,1]+s[t1:t2]
-	
-    return (fit)    
+	s<-append(s[t1:length(s)],rep(s,periods))
+    fit<-p[,1]+s[1:length(p)]
+    return (cbind(fit,p))    
 }
 
-plot.kzd <- function(x, ...)
+plot.kzd <- function(x, main=paste("KZ Decomposition of time series"), ...)
 {
     plot(cbind(
-               observed = cbind(observed=x$observed, 
-               		seasonal=x$seasonal, 
-               		seasonal_mean=x$seasonal_mean, 
-               		trend=x$trend, 
-               		fitted=x$fitted, 
-               		residuals=x$residuals)
+               observed = cbind(Observed=x$observed, 
+               		Seasonal=x$seasonal, 
+               		Seasonal_mean=x$seasonal_mean, 
+               		Trend=x$trend, 
+               		Fitted=x$fitted,
+               		Residuals=x$residuals)
                ),
-         main = paste("KZ Decomposition of time series"), 
+         main = main, 
          ...)
 }
 

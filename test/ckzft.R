@@ -5,11 +5,19 @@
 
 library(kza)
 
-period=101
+period=365.25
 f<-1/period
-t<-1:2000
+t<-1:5000
 s<-1*sin(2*pi*f*t)
-x<-s
+x<-ts(s,start=c(2005,1),freq=365.25)
+
+f1<-1/365.25
+f2<-1/30.4375
+t<-1:5000
+s<-1*sin(2*pi*f1*t)+1*sin(2*pi*f2*t)
+x<-ts(s,start=c(2005,1),freq=365.25)
+
+
 
 #a<-kzft(x,m=101,f=f,index=t)
 

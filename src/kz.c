@@ -22,7 +22,7 @@
 #include <Rdefines.h>
 #include "kz.h"
 
-static double mavg2d(SEXP v, int row, int col, int w)
+static double mavg2d(SEXP v, int row, int col, int m1, int m2)
 {
 	double s=0.00;
 	int i, j, z=0;
@@ -31,11 +31,11 @@ static double mavg2d(SEXP v, int row, int col, int w)
 
     if (isMatrix(v)) {
         
-        startrow = (row-w>0 ? row-w : 0);
-        startcol = (col-w>0 ? col-w : 0);
+        startrow = (row-m1>0 ? row-m1 : 0);
+        startcol = (col-m2>0 ? col-m2 : 0);
 
-        endrow = (row+w<nr ? row+w+1 : nrows(v));
-        endcol = (col+w<ncols(v) ? col+w+1 : ncols(v));
+        endrow = (row+m1<nr ? row+m1+1 : nrows(v));
+        endcol = (col+m2<ncols(v) ? col+m2+1 : ncols(v));
         
 	    for(i=startrow, z=0, s=0.00; i<endrow; i++) {
 	        for(j=startcol; j<endcol; j++) {
@@ -71,7 +71,7 @@ static double mavg1d(SEXP v, int col, int w)
 	return s/z;
 }
 
-static double averaged(SEXP x, SEXP box_center, int width)
+static double averaged(SEXP x, SEXP box_center, int m1, int m2, int m3)
 {
 	SEXP dim;
 	int ndim;
@@ -90,8 +90,8 @@ static double averaged(SEXP x, SEXP box_center, int width)
         /* bounding box */
         for(i=0; i<ndim; i++) {
             /* box edges */
-            INTEGER(box)[i] = (INTEGER(box_center)[i] - width>0 ? INTEGER(box_center)[i] - width : 0);
-            INTEGER(box)[i+ndim] = (INTEGER(box_center)[i] + width <INTEGER(dim)[i] ? INTEGER(box_center)[i] + width : INTEGER(dim)[i]-1);
+            INTEGER(box)[i] = (INTEGER(box_center)[i] - m1>0 ? INTEGER(box_center)[i] - m1 : 0);
+            INTEGER(box)[i+ndim] = (INTEGER(box_center)[i] + m2 <INTEGER(dim)[i] ? INTEGER(box_center)[i] + m2 : INTEGER(dim)[i]-1);
         }
         for(INTEGER(index)[0]=INTEGER(box)[0]; INTEGER(index)[0]<=INTEGER(box)[ndim]; INTEGER(index)[0]++) {
             for(INTEGER(index)[1]=INTEGER(box)[1]; INTEGER(index)[1]<=INTEGER(box)[1+ndim]; INTEGER(index)[1]++) {
@@ -128,14 +128,14 @@ SEXP kz1d(SEXP x, SEXP window, SEXP iterations)
 	int p;
 	int i, k;
 	int m;
-	SEXP ans, tmp, dim;
-	int n;
+	SEXP ans, tmp;
+//	int n;
 
 	m = (2 * INTEGER_VALUE(window)) + 1; 
 	p = (m-1)/2;
 	
-	dim = GET_DIM(x);
-	n = LENGTH(x);
+//	dim = GET_DIM(x);
+//	n = LENGTH(x);
 	
 	PROTECT(tmp = allocVector(REALSXP, LENGTH(x)));
 	PROTECT(ans = allocVector(REALSXP, LENGTH(x)));
@@ -154,14 +154,19 @@ SEXP kz1d(SEXP x, SEXP window, SEXP iterations)
 
 SEXP kz2d(SEXP x, SEXP window, SEXP iterations)
 {
-	int p;
+//	int p;
 	int i, j, k;
-	int m;
-	SEXP ans, tmp, dim;
+//	int m;
+	SEXP ans, tmp, dim, m;
 	int nr, nc;
+	int m1, m2;
 
-	m = (2 * INTEGER_VALUE(window)) + 1; 
-	p = (m-1)/2;
+//	m = (2 * INTEGER_VALUE(window)) + 1; 
+//	p = (m-1)/2;
+	
+//	dim = GET_DIM(window);
+	if (length(window)<2) {m1 = m2 = INTEGER(window);}
+	else {m1 = INTEGER(window)[0]; m2 = INTEGER(window)[1];}
 	
 	dim = GET_DIM(x);
 	nr = INTEGER(dim)[0]; nc = INTEGER(dim)[1];
@@ -173,7 +178,7 @@ SEXP kz2d(SEXP x, SEXP window, SEXP iterations)
 	for(k=0; k<INTEGER_VALUE(iterations); k++) {
 	    for(i=0;i<nr; i++) {
 	        for(j=0;j<nc;j++) {
-	            REAL(ans)[i+nr*j] = mavg2d(tmp, i, j, p);
+	            REAL(ans)[i+nr*j] = mavg2d(tmp, i, j, m1, m2);
 	        }
         }
         /* copyMatrix (destination, source, byrow) */
@@ -200,12 +205,15 @@ SEXP kz3d(SEXP x, SEXP window, SEXP iterations)
 	SEXP ans, tmp, dim;
 	SEXP index;
 	int offset, offset_a;
+	int m1, m2, m3;
 
 	m = (2 * INTEGER_VALUE(window)) + 1; 
 	p = (m-1)/2;
+
+	if (length(window)<3) {m1 = m2 = m3 = INTEGER(window);}
+	else {m1 = INTEGER(window)[0]; m2 = INTEGER(window)[1]; m3 = INTEGER(window)[2];}
 	
 	dim = GET_DIM(x);
-	
 	PROTECT(index = allocVector(INTSXP, LENGTH(dim)));
 	PROTECT(ans = allocArray(REALSXP, dim));
 	PROTECT(tmp = allocArray(REALSXP, dim));
@@ -229,7 +237,7 @@ SEXP kz3d(SEXP x, SEXP window, SEXP iterations)
                         }
                         offset += offset_a * INTEGER(index)[i];
                     }
-                    REAL(ans)[offset] = averaged(tmp, index, p);
+                    REAL(ans)[offset] = averaged(tmp, index, m1, m2, m3);
                 }
             }
         }

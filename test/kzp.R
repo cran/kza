@@ -1,10 +1,10 @@
-kzpi <- function(y, m=length(y), k=3, double_frequency=FALSE)
+Rkzp <- function(y, m=length(y), k=3, double_frequency=FALSE)
 {
 	M<-(m-1)*k+1
 	n<-length(y)
     z <- matrix(nrow = n, ncol = (m-1), byrow = TRUE)
 	for (i in 1:(m-1)) {
-		z[,i]<-kzfti(y,m=m,k=k,f=i/m,dim=1,trim=FALSE)
+		z[,i]<-Rkzft(y,m=m,k=k,f=i/m,dim=1,trim=FALSE)
 	}
 		
 	d<-apply(z,2,function(z) {(abs(z)^2)*M})
@@ -34,12 +34,12 @@ r<-c(0,1,rep(0,6))
 fft(r)
 
 
-t<-1:3000
-f1<-0.3
-f2<-0.4
-noise<-25*rnorm(length(t))
+t<-1:7000
+f1<-0.03
+f2<-0.04
+noise<-rnorm(length(t),0,5)
 s<-3*sin(2*pi*f1*t)+3*sin(2*pi*f2*t)
-a<-kzp(s+noise)
+a<-kzp(s,m=500,k=1)
 par(mfrow=c(3,1))
 plot(kzp(s+noise),main="KZP periodogram (smooth=FALSE)")
 plot(kzp(s+noise,smooth=TRUE,smooth_level=0.05))

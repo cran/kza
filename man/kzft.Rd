@@ -1,5 +1,7 @@
 \name{kzft}
 \alias{kzft}
+\alias{Rkzft}
+\alias{coeff}
 \alias{max_freq}
 \alias{transfer_function}
 \title{Kolmogorov-Zurbenko Fourier Transform}
@@ -10,12 +12,16 @@ Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
 Kolmogorov-Zurbenko Fourier Transform (KZFT) is the Fourier transform applied over every segment of length m iterated k times. If a frequency is not selected then the frequency with the largest amplitude is used.
 The approach taken here is to iterate fft to create a matrix of frequencies over time, another approach is to use matrices for the KZFT transform (see the KZFT package by Wei Yang in R).
 
+Rkzft is an implementation written completely in R. This function uses the coeff function to generate the coefficients.
+
 The frequency_kzft function returns the frequency with the largest variation.
 }
 \usage{
-kzft(x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL, trim=FALSE) 
-max_freq(x, m, start=1, t = NULL)
-transfer_function(m,k,lamda=seq(-0.5,0.5,by=0.01),omega=0)
+kzft(x, m = NULL, k = 1, f = NULL, dim = 1, index = NULL, trim = FALSE) 
+Rkzft(x, m = NULL, k = 1, f = NULL, dim = 2)
+coeff(m, k)
+max_freq(x, m, start = 1, t = NULL)
+transfer_function(m, k, lamda = seq(-0.5,0.5,by=0.01), omega = 0 )
 }
 \arguments{
   \item{x}{The raw time series}

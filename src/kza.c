@@ -132,6 +132,7 @@ static double mavg2d(SEXP v, boundingBox b)
 SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_length, SEXP tolerance)
 {
     int q, min_window_length;
+    int q1, q2;
 	int i, j, k;
 	SEXP dx, dy, dprimex, dprimey;
 	double mx, my;
@@ -144,6 +145,9 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
 
     epsilon = REAL(tolerance)[0];
 	q = INTEGER_VALUE(window);
+	if (length(window)<2) {q1 = q2 = INTEGER(window);}
+	else {q1 = INTEGER(window)[0]; q2 = INTEGER(window)[1];}
+	
 	min_window_length = INTEGER_VALUE(minimum_window_length);
 	
     dim = GET_DIM(v);
@@ -161,10 +165,10 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
      */
 	for(i=0; i<nr; i++) { /* ith row (y) */
 	    for(j=0;j<nc;j++) { /* jth column (x) */
-	        row_tail = (i-q<0 ? 0 : i-q);
-	        col_tail = (j-q<0 ? 0 : j-q);
-	        row_head = (i+q>=nr ? nr-1 : i+q);
-	        col_head = (j+q>=nc ? nc-1 : j+q);
+	        row_tail = (i-q1<0 ? 0 : i-q1);
+	        col_tail = (j-q2<0 ? 0 : j-q2);
+	        row_head = (i+q1>=nr ? nr-1 : i+q1);
+	        col_head = (j+q2>=nc ? nc-1 : j+q2);
 	        REAL(dx)[i+nr*j] = fabs(REAL(kz)[i+nr*col_head] - REAL(kz)[i+nr*col_tail]);
 	        REAL(dy)[i+nr*j] = fabs(REAL(kz)[row_head+nr*j] - REAL(kz)[row_tail+nr*j]);
 	    }
@@ -198,25 +202,25 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
     	for (i=0; i<nr; i++) {
     	    for(j=0; j<nc; j++) { /* coordinate (x (col),y (row) is [i+nr*j] */
 		        if (fabs(REAL(dprimex)[i+nr*j]) < epsilon) { /* dprimex[i,j] = 0 */
-			        qx_head = (int) floor(q*adaptive(REAL(dx)[i+j*nr], mx));
-			        qx_tail = (int) floor(q*adaptive(REAL(dx)[i+j*nr], mx));
+			        qx_head = (int) floor(q2*adaptive(REAL(dx)[i+j*nr], mx));
+			        qx_tail = (int) floor(q2*adaptive(REAL(dx)[i+j*nr], mx));
 		        } else if (REAL(dprimex)[i+nr*j] < 0) {
-		        	qx_head = q;
-    		        qx_tail = (int) floor(q*adaptive(REAL(dx)[i+j*nr], mx));
+		        	qx_head = q2;
+    		        qx_tail = (int) floor(q2*adaptive(REAL(dx)[i+j*nr], mx));
 	    	    } else {
-		        	qx_head = (int) floor(q*adaptive(REAL(dx)[i+j*nr], mx));
-			        qx_tail = q;
+		        	qx_head = (int) floor(q2*adaptive(REAL(dx)[i+j*nr], mx));
+			        qx_tail = q2;
 			    }
 
 		        if (fabs(REAL(dprimey)[i+nr*j]) < epsilon) { /* dprimey[i,j] = 0 */
-			        qy_head = (int) floor(q*adaptive(REAL(dy)[i+j*nr], my));
-			        qy_tail = (int) floor(q*adaptive(REAL(dy)[i+j*nr], my));
+			        qy_head = (int) floor(q1*adaptive(REAL(dy)[i+j*nr], my));
+			        qy_tail = (int) floor(q1*adaptive(REAL(dy)[i+j*nr], my));
 		        } else if (REAL(dprimey)[i+nr*j] < 0) {
-		        	qy_head = q;
-    		        qy_tail = (int) floor(q*adaptive(REAL(dy)[i+j*nr], my));
+		        	qy_head = q1;
+    		        qy_tail = (int) floor(q1*adaptive(REAL(dy)[i+j*nr], my));
 	    	    } else {
-		        	qy_head = (int) floor(q*adaptive(REAL(dy)[i+j*nr], my));
-			        qy_tail = q;
+		        	qy_head = (int) floor(q1*adaptive(REAL(dy)[i+j*nr], my));
+			        qy_tail = q1;
 			    }
 
 			    qx_tail = ((qx_tail) < min_window_length) ? min_window_length : qx_tail;
@@ -315,9 +319,13 @@ SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
     SEXP index;
     SEXP filter;
     int head, tail;
+    int q1, q2, q3;
     
     epsilon = REAL(tolerance)[0];
 	q = INTEGER_VALUE(window);
+	if (length(window)<3) {q1 = q2 = q3 = INTEGER(window);}
+	else {q1 = INTEGER(window)[0]; q2 = INTEGER(window)[1]; q3 = INTEGER(window)[2];}
+	
 	min_window_length = INTEGER_VALUE(minimum_window_length);
 	
     dim = GET_DIM(v);
@@ -342,12 +350,12 @@ SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
 	for(i=0; i<INTEGER(dim)[0]; i++) { 
 	    for(j=0;j<INTEGER(dim)[1];j++) {
 	        for(k=0;k<INTEGER(dim)[2];k++) {
-	            INTEGER(box)[0] = (i-q<0 ? 0 : i-q); /* row tail */
-	            INTEGER(box)[1] = (j-q<0 ? 0 : j-q); /* col tail */
-	            INTEGER(box)[2] = (k-q<0 ? 0 : k-q); /* z tail */
-	            INTEGER(box)[ndim] = (i+q>=INTEGER(dim)[0] ? INTEGER(dim)[0]-1 : i+q); /* row head */
-	            INTEGER(box)[ndim+1] = (j+q>=INTEGER(dim)[1] ? INTEGER(dim)[1]-1 : j+q); /* col head */
-	            INTEGER(box)[ndim+2] = (k+q>=INTEGER(dim)[2] ? INTEGER(dim)[2]-1 : k+q); /* z head */
+	            INTEGER(box)[0] = (i-q1<0 ? 0 : i-q1); /* row tail */
+	            INTEGER(box)[1] = (j-q2<0 ? 0 : j-q2); /* col tail */
+	            INTEGER(box)[2] = (k-q3<0 ? 0 : k-q3); /* z tail */
+	            INTEGER(box)[ndim] = (i+q1>=INTEGER(dim)[0] ? INTEGER(dim)[0]-1 : i+q1); /* row head */
+	            INTEGER(box)[ndim+1] = (j+q2>=INTEGER(dim)[1] ? INTEGER(dim)[1]-1 : j+q2); /* col head */
+	            INTEGER(box)[ndim+2] = (k+q3>=INTEGER(dim)[2] ? INTEGER(dim)[2]-1 : k+q3); /* z head */
 	            offset = i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k;
 	            /* head = offset+INTEGER(box)[ndim] 
 	            (i+INTEGER(box)[ndim])+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k; */
@@ -426,36 +434,36 @@ SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
                     tail = 0;
                     head = ndim;
 		            if (fabs(REAL(dprimex)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]) < epsilon) { /* dprimex[i,j] = 0 */
-			            INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx)); /* filter x head */
-			            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx)); /* filter x tail */
+			            INTEGER(filter)[head++] = (int) floor(q1*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx)); /* filter x head */
+			            INTEGER(filter)[tail++] = (int) floor(q1*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx)); /* filter x tail */
 		            } else if (REAL(dprimex)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] < 0) {
-		            	INTEGER(filter)[head++] = q;
-    		            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx));
+		            	INTEGER(filter)[head++] = q1;
+    		            INTEGER(filter)[tail++] = (int) floor(q1*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx));
 	    	        } else {
-		            	INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx));
-			            INTEGER(filter)[tail++] = q;
+		            	INTEGER(filter)[head++] = (int) floor(q1*adaptive(REAL(dx)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mx));
+			            INTEGER(filter)[tail++] = q1;
 			        }
 			        /* y */
 		            if (fabs(REAL(dprimey)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]) < epsilon) { /* dprimey[i,j,k] = 0 */
-		                INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
-			            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[1]*INTEGER(dim)[0]*k], my));
+		                INTEGER(filter)[head++] = (int) floor(q2*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
+			            INTEGER(filter)[tail++] = (int) floor(q2*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[1]*INTEGER(dim)[0]*k], my));
 		            } else if (REAL(dprimey)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] < 0) {
-		            	INTEGER(filter)[head++] = q;
-    		            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
+		            	INTEGER(filter)[head++] = q2;
+    		            INTEGER(filter)[tail++] = (int) floor(q2*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
 	    	        } else {
-		            	INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
-			            INTEGER(filter)[tail++] = q;
+		            	INTEGER(filter)[head++] = (int) floor(q2*adaptive(REAL(dy)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], my));
+			            INTEGER(filter)[tail++] = q2;
 			        }
 			        /* z */
 		            if (fabs(REAL(dprimez)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k]) < epsilon) { /* dprimey[i,j,k] = 0 */
-		                INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
-			            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[1]*INTEGER(dim)[0]*k], mz));
+		                INTEGER(filter)[head++] = (int) floor(q3*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
+			            INTEGER(filter)[tail++] = (int) floor(q3*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[1]*INTEGER(dim)[0]*k], mz));
 		            } else if (REAL(dprimez)[i+INTEGER(dim)[0]*j+INTEGER(dim)[0]*INTEGER(dim)[1]*k] < 0) {
-		            	INTEGER(filter)[head++] = q;
-    		            INTEGER(filter)[tail++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
+		            	INTEGER(filter)[head++] = q3;
+    		            INTEGER(filter)[tail++] = (int) floor(q3*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
 	    	        } else {
-		            	INTEGER(filter)[head++] = (int) floor(q*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
-			            INTEGER(filter)[tail++] = q;
+		            	INTEGER(filter)[head++] = (int) floor(q3*adaptive(REAL(dz)[i+j*INTEGER(dim)[0]+INTEGER(dim)[0]*INTEGER(dim)[1]*k], mz));
+			            INTEGER(filter)[tail++] = q3;
 			        }
                     
                     for( head=ndim, tail=0; tail<ndim; head++, tail++) {

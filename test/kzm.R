@@ -56,11 +56,13 @@ kzm <- function(z, data, window)
 		n=1
 		d=length(data)
 	}
-	a=vector(length=m^n,mode="numeric")
+	out=vector(length=m^n,mode="numeric")
 	wts=1
 	window=c(3,3)
+	
+	.C("kz_ma", out,  z, length(z), data, d, n, window, wts, NAOK=TRUE, DUP=FALSE, PACKAGE="kza") 
 
-	s <- .Call("kzm", a, length(a), z, length(z), data, d, n, window, wts, PACKAGE="kza")	
+//	s <- .Call("kzm", a, length(a), z, length(z), data, d, n, window, wts, PACKAGE="kza")	
 }
 
 
@@ -82,7 +84,7 @@ m=c(5,4);
 len=5*4
 a=vector(length=len,mode="numeric")
 
-s<-.C("kzm", as.double(a), as.double(m), as.double(x), as.integer(length(x)), as.double(data), as.double(dx), as.integer(length(dx)), as.double(window), as.double(w), NAOK=TRUE, DUP=FALSE, PACKAGE="kza")
+s<-.C("kz_ma", as.double(a), as.double(m), as.double(x), as.integer(length(x)), as.double(data), as.double(dx), as.integer(length(dx)), as.double(window), as.double(w), NAOK=TRUE, DUP=FALSE, PACKAGE="kza")
 
 
 
@@ -153,3 +155,18 @@ names(dd)<-c("y","x","z","data")
 
 nz<-cbind(dd$y, dd$x, dd$z)
 data<-dd$data
+
+
+##################
+
+x<-c(3,2,1,6,4,1,2,3,1,1,1,3)
+
+
+x = as.vector(x) 
+  n = length(x)
+k = n
+  k2 = k%/%2
+  y=double(n)
+ 
+
+.C("runmean_exact", x, y , as.integer(n), as.integer(k), NAOK=TRUE, DUP=FALSE, PACKAGE="kza") 

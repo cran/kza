@@ -1,5 +1,6 @@
 \name{kzp}
 \alias{kzp}
+\alias{Rkzp}
 \alias{smooth.kzp}
 \alias{nonlinearity.kzp}
 \alias{variation.kzp}
@@ -13,18 +14,18 @@
   The Kolmogorov-Zurbenko Periodogram is an estimate of the spectral density using the Kolmogorov-Zurbenko Fourier Transform (KZFT).
 }
 \usage{
-kzp(y, m=length(y), k=3, index=NULL, double_frequency=FALSE)
+kzp(y, m=length(y), k=1, double_frequency=FALSE)
 \method{smooth}{kzp}(object, log=TRUE, smooth_level=0.05, method = "DZ")
 \method{nonlinearity}{kzp}(x)
 \method{variation}{kzp}(x)
-\method{summary}{kzp}(object, digits=getOption("digits"), top=NULL, \dots)
+\method{summary}{kzp}(object, digits=getOption("digits"), top=1, \dots)
 \method{plot}{kzp}(x, \dots)
+Rkzp(y, m=NULL, k=3, double_frequency=FALSE)
 }
 \arguments{
   \item{y}{The raw data.}
   \item{m}{The width of filtering window}
   \item{k}{The number of iterations for the KZFT}
-  \item{index}{An indexing set}
   \item{double_frequency}{The return vector is half the width of the filtering window, setting this to true will give the second half.}
   \item{object}{Output from kzp function.}
   \item{log}{Use logarithm values for smoothing.}
