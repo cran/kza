@@ -1,10 +1,10 @@
 /*
     kz.c
-    Copyright (C) 2011 Brian D. Close
+    Copyright (C) 2013 Brian D. Close
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
+    the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
@@ -27,6 +27,12 @@
 #define MAX(y,x) ((x)>(y) && (x)==(x) ? (x) : (y))
 #define SQR(x) ((x)*(x))
 
+double setPrecision(double x, int prec) {
+    return 
+    	ceil( x * pow(10,(double)prec) - .4999999999999)
+    	/ pow(10,(double)prec);
+}
+
 // inY is indexed starting from 1 to end of time sequence
 
 void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, double *inY, double *inWindow, double *inScale, double *inLambda)
@@ -44,11 +50,9 @@ void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, dou
 	int n;
 	double complex c;
 	double pi;
-	double ti;
 	double complex theta;
-	int s;
-	int center;
 	double NaN = (0.0/0.0);
+	int here=0;
 	
 	pi = M_PI;
 	x  = inX;
@@ -60,7 +64,7 @@ void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, dou
 	r = outR; img = outImg;
 
 	// i is center k is index in time
-	for (i=0, start=0; i<t[xLength-1]; i++, r++, img++) {
+	for (i=0, start=0; i<=t[xLength-1]; i++, r++, img++) {
 		for(j=-(m-1)/2, n=0, k=start; j<=(m-1)/2; j++) {
 			if (i+j < 0) {continue;}
 			if (i+j > t[xLength-1]) {break;}
@@ -68,18 +72,20 @@ void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, dou
 			if (t[k]==i+j)
 			{
 				if (notNaN(x[k])) {
-					theta = 0+(2*pi*lambda*j)*I;
+					theta = 0-(2*pi*lambda*j)*I;
 					c = x[k] * cexp(theta);
 					if (isNaN(*r)) { *r=0; *img=0; }
 					*r += creal(c);
 					*img += cimag(c);
 					n++;
 				}
-				k++;;
+				k++;
 			}
 		}
 		if (n) {
+			here++;
 			*r /= n;
+			*r = setPrecision(*r,14);
 			*img /= n;
 		} else {
 			*r = NaN;

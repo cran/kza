@@ -1,6 +1,5 @@
 \name{kzft}
 \alias{kzft}
-\alias{Rkzft}
 \alias{coeff}
 \alias{max_freq}
 \alias{transfer_function}
@@ -9,16 +8,18 @@
 Kolmogorov-Zurbenko Fourier Transform is an iterated Fourier transform.
 }
 \details{
-Kolmogorov-Zurbenko Fourier Transform (KZFT) is the Fourier transform applied over every segment of length m iterated k times. If a frequency is not selected then the frequency with the largest amplitude is used.
-The approach taken here is to iterate fft to create a matrix of frequencies over time, another approach is to use matrices for the KZFT transform (see the KZFT package by Wei Yang in R).
+Kolmogorov-Zurbenko Fourier Transform (KZFT) is the Fourier transform applied 
+over every segment of length m iterated k times. The argument alg="F" will use 
+Fast Fourier Transforms written in C (fftw library). The alg="C" is a slow 
+Fourier Transform but has the advantage of being able to handle missing values. 
+It currently works in one dimension. The alg="R" is an R version of KZFT for 
+experimental purposes.The coeff function generates the coefficients for the KZFT 
+function.
 
-Rkzft is an implementation written completely in R. This function uses the coeff function to generate the coefficients.
-
-The frequency_kzft function returns the frequency with the largest variation.
+You will introduce a phase shift and decrease the fidelity of the signal if the product of f*m is not an integer.
 }
 \usage{
-kzft(x, m = NULL, k = 1, f = NULL, dim = 1, index = NULL, trim = FALSE) 
-Rkzft(x, m = NULL, k = 1, f = NULL, dim = 2)
+kzft(x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c("F","C","R"))
 coeff(m, k)
 max_freq(x, m, start = 1, t = NULL)
 transfer_function(m, k, lamda = seq(-0.5,0.5,by=0.01), omega = 0 )
@@ -30,11 +31,19 @@ transfer_function(m, k, lamda = seq(-0.5,0.5,by=0.01), omega = 0 )
   \item{f}{The frequency that KZFT is applied at.}
   \item{dim}{A value of 1 will return a vector of the given frequency and a value of 2 will return a matrix (spectra).}
   \item{index}{An indexing set}
-  \item{trim}{Remove k*m from edges of array.}
-  \item{start}{Search for max amplitude begining at start.}
+	\item{alg}{an option to choose different algorithms
+    \itemize{
+       \item \code{"C"} - a version written in C that uses a slow Fourier
+       Transform, but has the advantage of handling missing values.
+       \item \code{"F"} - this is written in C and uses Fast Fourier Transforms.
+       \item \code{"R"} - much slower code written in R. Useful for 
+         debugging and as documentation.
+     }
+  }
   \item{t}{An indexing set}
   \item{lamda}{The frequencies used for the calculating the transfer function.}
   \item{omega}{The frequency that KZFT is applied at.}
+  \item{start}{The starting values for the index.}
 }
 \references{
   I. G. Zurbenko, The spectral Analysis of Time Series. North-Holland, 1986.
@@ -59,23 +68,14 @@ transfer_function(m, k, lamda = seq(-0.5,0.5,by=0.01), omega = 0 )
 # coefficients of kzft(201,5)
 
 # function to calculate polnomial coefficients for kzft
-#require(polynom)
-#coeff <- function(m, k)
-#{
-#    poly<-polynomial(rep(1,m))
-#    polyk<-poly^k
-#    coef<-as.vector(polyk)
-#    coef<-coef/m^k
-#    M=(m-1)*k+1
-#    return(coef[1:M])
-#}
-
-#a<-coeff(201,5);
-#t<-seq(1:1001)-501;
-#z<-cos(2*pi*0.025*t);
-#plot(z*a,type="l",xlab="Time", ylab="Coefficient", main="Coefficients of the kzft");
-#lines(a);
-#lines(-1*a);
+\dontrun{
+a<-coeff(201,5);
+t<-seq(1:1001)-501;
+z<-cos(2*pi*0.025*t);
+plot(z*a,type="l",xlab="Time", ylab="Coefficient", main="Coefficients of the kzft");
+lines(a);
+lines(-1*a);
+}
 
 # example taken from Wei Yang's KZFT package
 # transfer function of the kzft(201,5) at frequency 0.025
@@ -88,6 +88,7 @@ matplot(lamda,cbind(log(tf1),log(tf2)),type="l",ylim=c(-15,0),
     main="Transfer function of kzft(201,5) at frequency 0.025")
 
 # example with missing values
+set.seed(2)
 period=101
 f<-1/period
 t<-1:2000
@@ -103,9 +104,9 @@ t[rand_idx]<-NA
 x<-as.vector(na.omit(x))
 t<-as.vector(na.omit(t))
 
-system.time(z1<-kzft(x, m=m, k=1, f=f, dim=1, index=t))
-system.time(z2<-kzft(x, m=m, k=2, f=f, dim=1, index=t))
-system.time(z3<-kzft(x, m=m, k=3, f=f, dim=1, index=t))
+system.time(z1<-kzft(x, m=m, k=1, f=f, dim=1, index=t, alg="C"))
+system.time(z2<-kzft(x, m=m, k=2, f=f, dim=1, index=t, alg="C"))
+system.time(z3<-kzft(x, m=m, k=3, f=f, dim=1, index=t, alg="C"))
 
 par(mfrow=c(2,2))
 plot(x,type="l",main="Original time series",xlab="t", ylab="y")

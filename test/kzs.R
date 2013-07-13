@@ -1,3 +1,13 @@
+n <- 1000
+x <- (1:n)/n
+true<-((exp(2.5*x)+sin(25*x))-1)/3
+
+noise <- rnorm(n)
+y <- true + noise 
+
+a<-kzs(y,m=60)
+
+
 t <- seq(from = -round(400*pi), to = round(400*pi), by = .25) 
 
 # Construct the signal over time

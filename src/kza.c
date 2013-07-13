@@ -131,7 +131,7 @@ static double mavg2d(SEXP v, boundingBox b)
 
 SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_length, SEXP tolerance)
 {
-    int q, min_window_length;
+    int min_window_length;
     int q1, q2;
 	int i, j, k;
 	SEXP dx, dy, dprimex, dprimey;
@@ -144,8 +144,7 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
 	double epsilon;
 
     epsilon = REAL(tolerance)[0];
-	q = INTEGER_VALUE(window);
-	if (length(window)<2) {q1 = q2 = INTEGER(window);}
+	if (length(window)<2) {q1 = q2 = INTEGER_VALUE(window);}
 	else {q1 = INTEGER(window)[0]; q2 = INTEGER(window)[1];}
 	
 	min_window_length = INTEGER_VALUE(minimum_window_length);
@@ -306,7 +305,7 @@ static double averaged(SEXP x, SEXP box_center, SEXP width)
 
 SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_length, SEXP tolerance)
 {
-    int q, min_window_length;
+    int min_window_length;
 	int i, j, k, l;
 	SEXP dx, dy, dprimex, dprimey;
 	double mx, my, mz;
@@ -322,8 +321,7 @@ SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
     int q1, q2, q3;
     
     epsilon = REAL(tolerance)[0];
-	q = INTEGER_VALUE(window);
-	if (length(window)<3) {q1 = q2 = q3 = INTEGER(window);}
+	if (length(window)<3) {q1 = q2 = q3 = INTEGER_VALUE(window);}
 	else {q1 = INTEGER(window)[0]; q2 = INTEGER(window)[1]; q3 = INTEGER(window)[2];}
 	
 	min_window_length = INTEGER_VALUE(minimum_window_length);
@@ -486,10 +484,10 @@ SEXP kza3d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
 
 SEXP kza(SEXP x, SEXP kz, SEXP window, SEXP iterations, SEXP min_window, SEXP tol)
 {
-    SEXP ans=R_NilValue, dim, class;
+    SEXP ans=R_NilValue, dim;
        
     dim = getAttrib(x, R_DimSymbol);
-    class = getAttrib(x, R_ClassSymbol);
+    //class = getAttrib(x, R_ClassSymbol);
     
     if (LENGTH(x) != LENGTH(kz)) {
         error("The size of the first two arguments do not match.");

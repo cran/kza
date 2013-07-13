@@ -154,18 +154,12 @@ SEXP kz1d(SEXP x, SEXP window, SEXP iterations)
 
 SEXP kz2d(SEXP x, SEXP window, SEXP iterations)
 {
-//	int p;
 	int i, j, k;
-//	int m;
-	SEXP ans, tmp, dim, m;
+	SEXP ans, tmp, dim;
 	int nr, nc;
 	int m1, m2;
 
-//	m = (2 * INTEGER_VALUE(window)) + 1; 
-//	p = (m-1)/2;
-	
-//	dim = GET_DIM(window);
-	if (length(window)<2) {m1 = m2 = INTEGER(window);}
+	if (length(window)<2) {m1 = m2 = INTEGER_VALUE(window);}
 	else {m1 = INTEGER(window)[0]; m2 = INTEGER(window)[1];}
 	
 	dim = GET_DIM(x);
@@ -210,7 +204,7 @@ SEXP kz3d(SEXP x, SEXP window, SEXP iterations)
 	m = (2 * INTEGER_VALUE(window)) + 1; 
 	p = (m-1)/2;
 
-	if (length(window)<3) {m1 = m2 = m3 = INTEGER(window);}
+	if (length(window)<3) {m1 = m2 = m3 = INTEGER_VALUE(window);}
 	else {m1 = INTEGER(window)[0]; m2 = INTEGER(window)[1]; m3 = INTEGER(window)[2];}
 	
 	dim = GET_DIM(x);

@@ -154,9 +154,9 @@ kzs <- function(y,m=NULL,k=3,t=NULL)
 		if (m>length(y)) m=2
 	}		
 	
-	if (is.null(t)) a<-kzfti(y,m=m,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
-	else a<-kzfti(y,m=m,index=t,f=0,k=k,dim=1,trim=FALSE)[1:length(y)]
-	
+	for (i in 1:k) {y<-kzft(y,m=m,k=1,f=0,dim=1,alg="C");}
+	a<-y
+
 	if (is.ts(y)) ans<-ts(Re(a),start=start(y),frequency=frequency(y))
 	else ans<-Re(a)
 	return (ans)

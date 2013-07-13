@@ -171,6 +171,8 @@ SEXP kzftwz(SEXP z, SEXP index_set, SEXP M, SEXP ans)
 {
 	PROTECT(z = AS_COMPLEX(z));
 	PROTECT(ans = AS_COMPLEX(ans));
+	PROTECT(index_set = AS_INTEGER(index_set));
+	PROTECT(M = AS_INTEGER(M));
 
 	SEXP dims = getAttrib(ans, R_DimSymbol); 
 	int nrows = INTEGER(dims)[0];
@@ -184,7 +186,7 @@ SEXP kzftwz(SEXP z, SEXP index_set, SEXP M, SEXP ans)
 
 	fftwz(a, t, m, nrows, ncols, p);
 
-	UNPROTECT(2);
+	UNPROTECT(4);
 	return (ans);
 }
 
@@ -192,7 +194,10 @@ SEXP kzftwzc(SEXP z, SEXP index_set, SEXP M, SEXP coeff, SEXP ans)
 {
 	PROTECT(z = AS_COMPLEX(z));
 	PROTECT(ans = AS_COMPLEX(ans));
-	
+	PROTECT(index_set = AS_INTEGER(index_set));
+	PROTECT(M = AS_INTEGER(M));
+	PROTECT(coeff = AS_NUMERIC(coeff));
+		
 	double *c = REAL(coeff);
 
 	SEXP dims = getAttrib(ans, R_DimSymbol); 
@@ -207,7 +212,7 @@ SEXP kzftwzc(SEXP z, SEXP index_set, SEXP M, SEXP coeff, SEXP ans)
 
 	fftwzc(a, t, m, c, nrows, ncols, p);
 
-	UNPROTECT(2);
+	UNPROTECT(5);
 	return (ans);
 }
 

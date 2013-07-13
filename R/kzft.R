@@ -1,81 +1,90 @@
+#===========================================================================#
+# kzft.R				                                                    #
+# Copyright (C) 2013 Brian Close                                            #
+# Distributed under GNU General Public License version 3                    #
+#===========================================================================#
 .packageName <- "kza"
 
 coeff<-function(m, k){as.vector(polynomial(rep(1,m))^k/m^k)}
 
-kzft<-function (x, m = NULL, k = 1, f = NULL, dim = 1, index = NULL, trim=FALSE) 
+kzft<-function (x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c("F","C","R")) 
 {
-	if (is.null(m)) {
-		if (is.ts(x)) { m=frequency(x) }
-		else {m=length(x)}
-	}
-	if (dim > 2) stop("kzft only supports up to 2 dimensions.")
-	k <- as.integer(k)
-	m <- as.integer(m)
-	loops=k
+	alg= match.arg(alg)
+	if (dim > 2) stop("kzft only supports up to 2 dimensions.");
+	k <- as.integer(k);
+	m <- as.integer(m);
+	loops=k;
 
-	if (dim==1 & !is.null(f)) {
-		
+	if (alg=="R") { return (Rkzft(x, m=m, k=k, f=f, dim=dim)); }
+	
+	if (alg=="C") {
+		if (is.null(dim)) {dim=1;}
+		if (dim == 2) { stop("The 'C' version of kzft is only one dimension at this time.");}
+		if (is.null(m)) {
+			if (is.ts(x)) { m=1/frequency(x); }
+			else {m=length(x);}
+		}
+		if (is.null(f)) { f=1/m; }
+    	
 		scale=1
 		if (is.null(index)) { 
 			index=seq(1:length(x));
 			index<-index[!is.na(x)];
 		}
-		index = index-1;
-
+		## need zero based index for c code.
+		index = index-1; 
+    	
 		if (max(is.na(index))) stop("Index cannot have NA values");
 		for (i in 1:k) {
-			x<-as.vector(na.omit(x))
-			index<-as.vector(na.omit(index))
-			y.r<-vector(mode="numeric", length=(max(index)));
-			y.i<-vector(mode="numeric", length=(max(index)));
+			y.r<-vector(mode="numeric", length=(max(index)+1));
+			y.i<-vector(mode="numeric", length=(max(index)+1));
 			s<-.C("ckzft", as.double(y.r), as.double(y.i), as.double(x), as.integer(length(x)), 
 				as.double(index), as.double(m), as.double(scale), as.double(f), NAOK=TRUE, DUP=FALSE);
 			x<-2*y.r;
 			index<-seq(1:length(x));
 			index<-index[!is.na(x)];
+			index=index-1;
 		}
-		if (trim) { y.r<-y.r[(k*(m-1)/2):(length(y.r)-k*(m-1)/2)]; y.i<-y.i[(k*(m-1)/2):(length(y.i)-k*(m-1)/2)]; }
 		z<-complex(real=y.r, imaginary=y.i);
 	
 		return (z)
 	}
 
-	    
-	######
-	# if frequency (f) is not supplied, assume a spectrum analysis
-	#####
-	if (is.null(index)) {
-		if (is.null(f)) { 
-			index<-seq(1,length(x)) 
-		} else {
-			if (f==0) { index<-seq(m/2,length(x)+m/2-1) }
-			else { index<-seq(1,length(x)) }
+	if (alg=="F") {	    
+		######
+		# if frequency (f) is not supplied, assume a spectrum analysis
+		#####
+		if (is.null(index)) {
+			if (is.null(f)) { 
+				index<-seq(1,length(x)) 
+			} else {
+				if (f==0) { index<-seq(m/2,length(x)+m/2-1) }
+				else { index<-seq(1,length(x)) }
+			}
 		}
-	}
-	
-	n<-max(index)
-	z <- matrix(nrow = n, ncol = m, byrow = TRUE)
-	z<-.Call("kzftwz",x,as.integer(index),as.integer(m),as.matrix(z))
-	
-	if (is.null(f)) {
-		s <- which.max(colMeans(abs(Re(z)))[1:(m/2)])
-		f <- (s-1)/m
-	} else { s <- f * m + 1	}
-	
-	if (k>1) {
-		if (f==0) { index<-seq(m/2,length(z[,s])+m/2-1) }
-		else { index<-seq(1,length(z[,s])) }
 		
-		for (i in 2:k) {
-			z<-.Call("kzftwz",z[,s],as.integer(index),as.integer(m),as.matrix(z))
+		n<-max(index)
+		z <- matrix(nrow = n, ncol = m, byrow = TRUE)
+		z<-.Call("kzftwz",x,as.integer(index),as.integer(m),as.matrix(z))
+		
+		if (is.null(f)) {
+			s <- which.max(colMeans(abs(Re(z)))[1:(m/2)])
+			f <- (s-1)/m
+		} else { s <- f * m + 1	}
+		
+		if (k>1) {
+			if (f==0) { index<-seq(m/2,length(z[,s])+m/2-1) }
+			else { index<-seq(1,length(z[,s])) }
+			
+			for (i in 2:k) {
+				z<-.Call("kzftwz",z[,s],as.integer(index),as.integer(m),as.matrix(z))
+			}
 		}
+    	
+		if (dim==1) z<-as.vector(z[,s])
+		    
+		return (z)
 	}
-
-	## remove m at the end of array
-	if (trim & (n-m*loops)>0) z<-z[1:(n-m*loops),]
-	if (dim==1) z<-as.vector(z[,s])
-	    
-	return (z)
 }
 
 Rkzft <- function(x, m=NULL, k=1, f=NULL, dim=2)
@@ -313,6 +322,7 @@ smooth.kzp<-function(object, log=TRUE, smooth_level=0.05, method = "DZ")
 
     for ( i in (1:n) ) {
         m[i]<-sum(q$matrix[i,1:n]<=cc)
+
         spg[i]<-mean(p[(max(1,(i-m[i]+1))):(min(n,(i+m[i]-1)))])
     }
     

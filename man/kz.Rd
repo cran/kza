@@ -20,6 +20,7 @@ kz(x, m, k = 3)
 }
 \examples{
 ## 2 dimensions
+set.seed(2)
 a <- matrix(rep(0,100*100),nrow=100)
 a[35:70,35:70]<-1
 a <- a + matrix(rnorm(100*100,0,1),nrow=100)
@@ -28,8 +29,13 @@ z<-kz(a,m=c(20,5),k=3)
 x <- seq(1,100)
 y <- x
 op <- par(bg = "white")
-persp(x, y, a, zlab="a", ticktype="detailed", theta = 60, phi = 45, col = "lightblue", main="Unsmoothed")
-persp(x, y, z, zlab="z", ticktype="detailed", theta = 60, phi = 45, col = "lightblue", main="KZ(a,m=c(20,5),k=3)")
+
+c="lightblue"
+m="Unsmoothed"
+persp(x, y, a, zlab="a", ticktype="detailed", theta = 60, phi = 45, col = c, main=m)
+
+m="KZ(a,m=c(20,5),k=3)"
+persp(x, y, z, zlab="z", ticktype="detailed", theta = 60, phi = 45, col = c, main=m)
 
 #example
 t <- seq(0,20,length=20*365)

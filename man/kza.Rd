@@ -71,6 +71,7 @@ lines(k.kza$kza, col=4)
 ######################
 # image detection (2d)
 ######################
+set.seed(2)
 a <- matrix(rep(0,100*100),nrow=100)
 a[35:70,35:70]<-1
 a <- a + matrix(rnorm(100*100,0,1),nrow=100)
@@ -84,13 +85,13 @@ op <- par(bg = "white")
 ###
 #noise
 ###
-persp(x, y, a, zlab="z", zlim=c(0,2), ticktype="detailed", theta = 30, phi = 30, col = "lightblue")
+c="lightblue"
+persp(x, y, a, zlab="z", zlim=c(-5,5), ticktype="detailed", theta=30, phi=30, col=c)
 
 ###
 #kza filtered
 ###
-X11()
-persp(x, y, v$kza, zlab="z", zlim=c(0,2), ticktype="detailed", theta = 30, phi = 30, col = "lightblue")
+persp(x,y,v$kza,zlab="z",zlim=c(-5,5),ticktype="detailed",theta=30,phi=30,col=c)
 
 ###
 # another view
