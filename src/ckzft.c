@@ -33,6 +33,17 @@ double setPrecision(double x, int prec) {
     	/ pow(10,(double)prec);
 }
 
+double complex cexp(double complex z)
+{
+	double complex w;
+	double r, x, y;
+	x = creal(z);
+	y = cimag(z);
+	r = exp(x);
+	w = r * cos(y) + r * sin(y) * I;
+	return w;
+}
+
 // inY is indexed starting from 1 to end of time sequence
 
 void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, double *inY, double *inWindow, double *inScale, double *inLambda)
@@ -41,7 +52,6 @@ void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, dou
 	double *img;
 	double *x;
 	double *t;
-	double *scale;
 	double m;
 	double lambda;
 	int xLength;
@@ -59,7 +69,6 @@ void ckzft(double *outR, double *outImg, double *inX, const int *vectorSize, dou
 	xLength = *vectorSize;
 	t = inY;
 	m = *inWindow;
-	scale = inScale;
 	lambda = *inLambda;
 	r = outR; img = outImg;
 

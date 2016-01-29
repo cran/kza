@@ -5,7 +5,7 @@
 #===========================================================================#
 .packageName <- "kza"
 
-coeff<-function(m, k){as.vector(polynomial(rep(1,m))^k/m^k)}
+coeff<-function(m, k){as.vector(polynom::polynomial(rep(1,m))^k/m^k)}
 
 kzft<-function (x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c("F","C","R")) 
 {
@@ -15,8 +15,34 @@ kzft<-function (x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c(
 	m <- as.integer(m);
 	loops=k;
 
-	if (alg=="R") { return (Rkzft(x, m=m, k=k, f=f, dim=dim)); }
+	if (alg=="R") { 
+		if (is.null(m)) {
+			if (is.ts(x)) { m=frequency(x) }
+			else {m=length(x)}
+		}
 	
+		k<-as.integer(k)
+		m<-as.integer(m)
+	
+		if (requireNamespace("polynom")) {c<-coeff(m,k)} else {stop("Package polynom is required to use the R version of kzft.")}
+		if (is.null(nrow(x))) n<-length(x)-(k*(m-1)+1) else n=nrow(x)-m+1
+		n<-max(1,n)
+		z<-matrix(nrow=n, ncol=(k*(m-1)+1), byrow=TRUE)
+		for(i in 1:n) {
+			y<-x[i:(k*(m-1)+i)]*c
+			z[i,]=fft(y)
+		}
+	
+		if (is.null(f)) {
+			s<-which.max(colMeans(abs(Re(z)), na.rm = TRUE)[1:(m/2)])
+			f<-(s-1)/(k*(m-1)+1)
+		} else {s<-round(f*(k*(m-1)+1)+1)}
+		
+		#if ((n-m*k)>0) z<-z[1:(n-m*k),]
+		if (dim==1) z<-as.vector(z[,s])
+	    return(z);
+	}
+		
 	if (alg=="C") {
 		if (is.null(dim)) {dim=1;}
 		if (dim == 2) { stop("The 'C' version of kzft is only one dimension at this time.");}
@@ -39,13 +65,14 @@ kzft<-function (x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c(
 			y.r<-vector(mode="numeric", length=(max(index)+1));
 			y.i<-vector(mode="numeric", length=(max(index)+1));
 			s<-.C("ckzft", as.double(y.r), as.double(y.i), as.double(x), as.integer(length(x)), 
-				as.double(index), as.double(m), as.double(scale), as.double(f), NAOK=TRUE, DUP=FALSE);
-			x<-2*y.r;
-			index<-seq(1:length(x));
-			index<-index[!is.na(x)];
+				as.double(index), as.double(m), as.double(scale), as.double(f), NAOK=TRUE);
+			##x<-2*y.r;
+			x<-2*s[[1]];
+			index<-seq(1:length(s[[3]]));
+			index<-index[!is.na(s[[3]])];
 			index=index-1;
 		}
-		z<-complex(real=y.r, imaginary=y.i);
+		z<-complex(real=s[[1]], imaginary=s[[2]]);
 	
 		return (z)
 	}
@@ -85,35 +112,6 @@ kzft<-function (x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c(
 		    
 		return (z)
 	}
-}
-
-Rkzft <- function(x, m=NULL, k=1, f=NULL, dim=2)
-{
-	if (is.null(m)) {
-		if (is.ts(x)) { m=frequency(x) }
-		else {m=length(x)}
-	}
-
-	k<-as.integer(k)
-	m<-as.integer(m)
-
-	c<-coeff(m,k)
-	if (is.null(nrow(x))) n<-length(x)-(k*(m-1)+1) else n=nrow(x)-m+1
-	n<-max(1,n)
-	z<-matrix(nrow=n, ncol=(k*(m-1)+1), byrow=TRUE)
-	for(i in 1:n) {
-		y<-x[i:(k*(m-1)+i)]*c
-		z[i,]=fft(y)
-	}
-
-	if (is.null(f)) {
-		s<-which.max(colMeans(abs(Re(z)), na.rm = TRUE)[1:(m/2)])
-		f<-(s-1)/(k*(m-1)+1)
-	} else {s<-round(f*(k*(m-1)+1)+1)}
-	
-	#if ((n-m*k)>0) z<-z[1:(n-m*k),]
-	if (dim==1) z<-as.vector(z[,s])
-    return(z);
 }
 
 kztp <- function(x, m, k, box=c(0,0.5,0,0.5))
@@ -165,7 +163,7 @@ Rkzp <- function(y, m=NULL, k=3, double_frequency=FALSE)
 	if (is.null(m)) {m=(length(y)-1)/k+1}
 	M<-(m-1)*k+1
 	if (M>length(y)) stop("The value of (m-1)*k+1 needs to be less then the length of the input data x")
-	z<-Rkzft(y,m=m,k=k,dim=2)
+	z<-kzft(y,m=m,k=k,dim=2,alg="R")
 	d<-apply(z,2,function(z) {(abs(z)^2)*M})
 	if (is.null(dim(d))) a=d  else a<-colMeans(d)
 
@@ -331,7 +329,7 @@ smooth.kzp<-function(object, log=TRUE, smooth_level=0.05, method = "DZ")
     return(object)
 }
 
-kzfti<-function (x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL, trim=TRUE) 
+.kzfti<-function (x, m = length(x), k = 1, f = NULL, dim = 1, index = NULL, trim=TRUE) 
 {
 		if (dim > 2) stop("kzft only supports up to 2 dimensions.")
 		k <- as.integer(k)

@@ -1,5 +1,6 @@
 \name{kza}
 \alias{kza}
+\alias{plot.kza}
 \title{Kolmogorov-Zurbenko Adaptive}
 \author{Brian Close <brian.close@gmail.com> and Igor Zurbenko <IZurbenko@albany.edu>}
 \description{
@@ -7,11 +8,12 @@ KZA will recover 2-dimensional or 3-dimensional image or signal buried in noise.
 }
 \details{
 The selection of parameters of KZA depend on the nature of the data. 
-This function can take a long time to run, depending on the number of dimensions
+This function may take a long time to run, depending on the number of dimensions
 and the size of the dimensions.
 }
 \usage{
 kza(x, m, y = NULL, k = 3, min_size = round(0.05*m), tol = 1.0e-5, impute_tails = FALSE)
+\method{plot}{kza}(x, \dots)
 }
 \arguments{
   \item{x}{A vector of the time series or a matrix (2d) or an array (3d) of an image.}
@@ -21,13 +23,14 @@ kza(x, m, y = NULL, k = 3, min_size = round(0.05*m), tol = 1.0e-5, impute_tails 
   \item{min_size}{Minimum size of window q.}
   \item{tol}{The smallest value to accept as nonzero.}
   \item{impute_tails}{The default is to drop the tails.}
+  \item{...}{Other parameters.}
 }
 \references{
     I. Zurbenko, P.S. Porter, S.T. Rao, J.Y. Ku, R. Gui, R.E. Eskridge
     Detecting Discontinuities in Time Series of Upper-air Data: 
     Development and Demonstration of an Adaptive Filter Technique.
     Journal of Climate: (1996) Vol. 9, No. 12, pp. 3548 3560.
-    \url{http://ams.allenpress.com/amsonline/?request=get-abstract&issn=1520-0442&volume=009&issue=12&page=3548}
+    \url{http://journals.ametsoc.org/action/doSearch?AllField=zurbenko&filter=AllField}
     
     Kevin L. Civerolo, Elvira Brankov, S. T. Rao, Igor Zurbenko
     Assessing the impact of the acid deposition control program.

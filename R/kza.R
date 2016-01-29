@@ -80,15 +80,22 @@ kzsv <- function(object)
         class = "kzsv")    
 }
 
-plot.kzsv <- function(object, ...)
+plot.kzp <- function(x, ...)
 {
-	x<-object$kza
-    plot(cbind(	kz = x$kz,	kza = x$kza, sigma= sqrt(object$kzsv/mean(object$kzsv))/1.96, 
-    concavity=diff(diff(sqrt(object$kzsv/mean(object$kzsv))/1.96))), type='l',	    	
+	if (is.null(x$smooth_periodogram)) dz<-x$periodogram else dz<-x$smooth_periodogram
+	omega<-seq(0:(length(x$periodogram)-1))/(x$k*(x$window-1))
+	plot(omega, dz, type="l", xlab="Frequency", ylab="")
+}
+
+plot.kzsv <- function(x, ...)
+{
+	x<-x$kza
+  plot(cbind(	kz = x$kz,	kza = x$kza, sigma= sqrt(x$kzsv/mean(x$kzsv))/1.96, 
+    concavity=diff(diff(sqrt(x$kzsv/mean(x$kzsv))/1.96))), type='l',	    	
    		main = paste("KZSV Sample Variance"))
 }
 
-cluster <- function(x, span=15)
+.cluster <- function(x, span=15)
 {
 	p=NULL
 	m=NULL
@@ -102,7 +109,7 @@ cluster <- function(x, span=15)
 	m=c(m,round(mean(p)))
 }
 
-peaks <- function(x, sigma=3, span=25)
+.peaks <- function(x, sigma=3, span=25)
 {
 	a<-x-mean(x)
 	p2=NULL
@@ -116,7 +123,7 @@ peaks <- function(x, sigma=3, span=25)
 		p2[i] <-	which(a==j)
 		i=i+1
 	}
-	return (cluster(p2, span))
+	return (.cluster(p2, span))
 }
 
 
@@ -128,7 +135,7 @@ summary.kzsv <- function(object, digits = getOption("digits"), ...)
 	s<-sqrt(object$kzsv/mean(object$kzsv))/1.96
 	d<-diff(diff(sqrt(object$kzsv/mean(object$kzsv))/1.96))
 	
-	p<-peaks(s)
+	p<-.peaks(s)
 	
 	if (is.ts(object$kzsv)) {
 	    cat("\n Dates of interest:\n")

@@ -1,22 +1,8 @@
-/*
-    kz.c
-    Copyright (C) 2011 Brian D. Close
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*/
+/*===========================================================================*/
+/* kz - window functions                                                     */
+/* Copyright (C) 2015 Brian D. Close                                         */
+/* Distributed under GNU General Public License version 3                    */
+/*===========================================================================*/
 
 #include <R.h> 
 #include <Rdefines.h>
@@ -167,16 +153,16 @@ SEXP kz2d(SEXP x, SEXP window, SEXP iterations)
 	
 	PROTECT(ans = allocMatrix(REALSXP, nr, nc));
 	PROTECT(tmp = allocMatrix(REALSXP, nr, nc));
-    copyMatrix(tmp, x, 1);
+    copyMatrix(tmp, x, 0);
 
 	for(k=0; k<INTEGER_VALUE(iterations); k++) {
-	    for(i=0;i<nr; i++) {
-	        for(j=0;j<nc;j++) {
+      for(j=0;j<nc;j++) {
+		    for(i=0;i<nr; i++) {
 	            REAL(ans)[i+nr*j] = mavg2d(tmp, i, j, m1, m2);
-	        }
-        }
+	      }
+      }
         /* copyMatrix (destination, source, byrow) */
-   	    copyMatrix(tmp, ans, 1); 
+   	    copyMatrix(tmp, ans, 0); 
 	}
 	UNPROTECT(2);
 	return ans;
@@ -193,16 +179,11 @@ void copyArray(SEXP destination, SEXP source)
 
 SEXP kz3d(SEXP x, SEXP window, SEXP iterations)
 {
-	int p;
 	int i, j, l;
-	int m;
 	SEXP ans, tmp, dim;
 	SEXP index;
 	int offset, offset_a;
 	int m1, m2, m3;
-
-	m = (2 * INTEGER_VALUE(window)) + 1; 
-	p = (m-1)/2;
 
 	if (length(window)<3) {m1 = m2 = m3 = INTEGER_VALUE(window);}
 	else {m1 = INTEGER(window)[0]; m2 = INTEGER(window)[1]; m3 = INTEGER(window)[2];}

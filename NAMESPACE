@@ -1,2 +1,13 @@
-useDynLib(kza)
-export(kz, kza, kzsv, kzft, kztp, kzs, kzp, plot.kzp, summary.kzp, periodogram, max_freq, smooth.kzp, variation.kzp, nonlinearity.kzp, transfer_function, coeff)
+useDynLib("kza")
+
+importFrom("graphics", "par", "plot")
+importFrom("stats", "cycle", "fft", "frequency", "is.ts", "start", "time", "ts", "var")
+
+S3method(plot, kza)
+S3method(plot, kzp)
+S3method(plot, kzsv)
+S3method(summary, kzp)
+S3method(summary, kzsv)
+
+# Export all names
+exportPattern(".")

@@ -153,7 +153,7 @@ SEXP kza2d(SEXP v, SEXP kz, SEXP window, SEXP iterations, SEXP minimum_window_le
 	nr = INTEGER(dim)[0]; nc = INTEGER(dim)[1];
 	
 	PROTECT(tmp = allocMatrix(REALSXP, nr, nc));
-    copyMatrix(tmp, v, 1);
+    copyMatrix(tmp, v, 0);
 
 	/* calculate d1 = |Z(x+q,y) - Z(x-q,y)| , d2 = |Z(x,y+q) - Z(x,y-q)| */
 	PROTECT(dx = allocMatrix(REALSXP, nr, nc));
