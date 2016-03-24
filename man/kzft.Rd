@@ -19,31 +19,17 @@ function.
 You will introduce a phase shift and decrease the fidelity of the signal if the product of f*m is not an integer.
 }
 \usage{
-kzft(x, m = NULL, k = 1, f = NULL, dim = NULL, index = NULL, alg = c("F","C","R"))
+kzft(x, f=0, m=1, k=1) 
 coeff(m, k)
-max_freq(x, m, start = 1, t = NULL)
 transfer_function(m, k, lamda = seq(-0.5,0.5,by=0.01), omega = 0 )
 }
 \arguments{
-  \item{x}{The raw time series}
+  \item{x}{The raw data}
+  \item{f}{The frequency that KZFT is applied at.}
   \item{m}{The window size for transform}
   \item{k}{The number of iterations for applying the KZFT}
-  \item{f}{The frequency that KZFT is applied at.}
-  \item{dim}{A value of 1 will return a vector of the given frequency and a value of 2 will return a matrix (spectra).}
-  \item{index}{An indexing set}
-	\item{alg}{an option to choose different algorithms
-    \itemize{
-       \item \code{"C"} - a version written in C that uses a slow Fourier
-       Transform, but has the advantage of handling missing values.
-       \item \code{"F"} - this is written in C and uses Fast Fourier Transforms.
-       \item \code{"R"} - much slower code written in R. Useful for 
-         debugging and as documentation.
-     }
-  }
-  \item{t}{An indexing set}
   \item{lamda}{The frequencies used for the calculating the transfer function.}
   \item{omega}{The frequency that KZFT is applied at.}
-  \item{start}{The starting values for the index.}
 }
 \references{
   I. G. Zurbenko, The spectral Analysis of Time Series. North-Holland, 1986.
@@ -100,13 +86,11 @@ m=101
 
 rand_idx <- sample(t,100,replace=FALSE)
 x[rand_idx]<-NA
-t[rand_idx]<-NA
 x<-as.vector(na.omit(x))
-t<-as.vector(na.omit(t))
 
-system.time(z1<-kzft(x, m=m, k=1, f=f, dim=1, index=t, alg="C"))
-system.time(z2<-kzft(x, m=m, k=2, f=f, dim=1, index=t, alg="C"))
-system.time(z3<-kzft(x, m=m, k=3, f=f, dim=1, index=t, alg="C"))
+system.time(z1<-kzft(x, m=m, k=1, f=f))
+system.time(z2<-kzft(x, m=m, k=2, f=f))
+system.time(z3<-kzft(x, m=m, k=3, f=f))
 
 par(mfrow=c(2,2))
 plot(x,type="l",main="Original time series",xlab="t", ylab="y")

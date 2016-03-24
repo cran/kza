@@ -31,7 +31,7 @@ kza(x, m, y = NULL, k = 3, min_size = round(0.05*m), tol = 1.0e-5, impute_tails 
     Development and Demonstration of an Adaptive Filter Technique.
     Journal of Climate: (1996) Vol. 9, No. 12, pp. 3548 3560.
     \url{http://journals.ametsoc.org/action/doSearch?AllField=zurbenko&filter=AllField}
-    
+
     Kevin L. Civerolo, Elvira Brankov, S. T. Rao, Igor Zurbenko
     Assessing the impact of the acid deposition control program.
     Atmospheric Environment 35 (2001) 4135-4148
@@ -103,7 +103,6 @@ par(mfrow=c(1,2))
 image(a,col=gray(seq(0,1,1/255)))
 image(v$kza,col=gray(seq(0,1,1/255)))
 par(mfrow=c(1,1))
-
 
 }
 \keyword{ts}
