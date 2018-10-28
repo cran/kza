@@ -30,6 +30,7 @@ SEXP kza2d(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 void differenced(double *, double *, double *, long, int);
 void R_differenced(SEXP, SEXP, SEXP, int);
 double R_maximum(SEXP);
+SEXP kzsv(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP R_kzsv(SEXP, SEXP, SEXP, SEXP, SEXP);
 void copyArray(SEXP, SEXP);
 SEXP kzs(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
