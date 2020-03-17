@@ -1,5 +1,5 @@
 Package: kza
-Version: 4.1.0
+Version: 4.1.0.1
 Date: 2018-10-28
 Title: Kolmogorov-Zurbenko Adaptive Filters
 Author: Brian Close <brian.close@gmail.com>, Igor Zurbenko <IZurbenko@albany.edu> and Mingzeng Sun <msun@albany.edu>	
@@ -10,5 +10,5 @@ SystemRequirements: fftw (>= 3.2.2)
 License: GPL-3
 NeedsCompilation: yes
 Repository: CRAN
-Packaged: 2018-10-28 17:29:23 UTC; brian
-Date/Publication: 2018-10-28 17:40:03 UTC
+Packaged: 2020-03-16 17:40:36 UTC; hornik
+Date/Publication: 2020-03-17 18:36:44 UTC

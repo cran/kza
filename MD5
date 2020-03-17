@@ -1,4 +1,4 @@
-9da1743dd0080a3102ab115dff173881 *DESCRIPTION
+26035c2623003b5ac4b7178991e893db *DESCRIPTION
 41529b34c9b778762b1d3d1489a76aaf *NAMESPACE
 e9bd2f9e47ae79d2fa1103b6e3376f4e *R/kza.R
 99924857c55f2c4a01d40a356f7f1251 *R/kzft.R
@@ -13,7 +13,7 @@ c0baf31c23b5e3d90b699f49a416bb01 *README
 f744f97ef843ff990a34ccab5e4f5649 *man/kztp.Rd
 04ab42e65338d8151fa49c8e0f94a0b8 *man/periodogram.Rd
 694a141656d7f6b2bc3b655d1182a75a *man/rlv.Rd
-2acb109a9a06b12421c34f685f556f6d *src/init.c
+a40cef4cdd66c9db78625b5f20e5f497 *src/init.c
 8c9fcbb0d3afe92ee6f3db9baccdff20 *src/kz.c
 5c19bb2a4bec5270966b4c190c090802 *src/kz.h
 eda51bf56fde2a908d41bf87419d6573 *src/kza.c
